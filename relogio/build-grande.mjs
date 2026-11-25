@@ -88,11 +88,12 @@ const fitPoints = BOXES.flatMap((b) =>
 );
 const P = k.fitProjection(fitPoints, WIDTH, HEIGHT, { pad: 18, azimuth: 75, elevation: 55, zs: ZS });
 const VB1 = [0, 0, WIDTH, HEIGHT];
-const STAGE1 = Object.fromEntries(["bezel", "hands", "dial", "motion"].map((id) => [id, Math.round(700 * ZK)]));
+const S1_LIFT = 520;
+const STAGE1 = Object.fromEntries(["bezel", "hands", "dial", "motion"].map((id) => [id, Math.round(S1_LIFT * ZK)]));
 const WELL_UP = 44;
 for (const id of ["plate", "barrel", "train", "escape", "balance", "bridges", "chrono", "bridgePa", "bridgeHook", "bridgeHeart", "cock"]) STAGE1[id] = WELL_UP;
 const VBM = (() => {
-  const pts = k.boxCorners({ x: -225, y: -330, w: 450, d: 670, r: 0 }, -130, 62 + 700 * ZK + 24).map((q) => k.iso(q, P));
+  const pts = k.boxCorners({ x: -225, y: -330, w: 450, d: 670, r: 0 }, -130, 62 + S1_LIFT * ZK + 24).map((q) => k.iso(q, P));
   const xs = pts.map((q) => q[0]);
   const ys = pts.map((q) => q[1]);
   const x0 = Math.min(...xs) - 30;
