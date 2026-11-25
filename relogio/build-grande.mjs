@@ -67,14 +67,14 @@ const ASM = [
   { id: "pushR", name: "Pusher inferior", does: "", lift: 0 },
   { id: "loopT", name: "Pulseira fechada (alto)", does: "", lift: 0 },
   { id: "loopB", name: "Pulseira fechada (baixo)", does: "", lift: 0 },
-  { id: "cushion", name: "Almofada", does: "Almofada de apoio usada para mostrar o relógio montado.", lift: 0 },
+  { id: "cushion", name: "Almofada", does: "Almofada de apoio usada para mostrar o relógio montado.", lift: -3300 },
   { id: "case", name: "Caixa, coroa e pulseira", does: "Carrura com as hastes que prendem a pulseira de couro. A coroa dá corda e, puxada, ajusta a hora (e para o balanço para acertar o segundo). Os dois pushers laterais comandam o cronógrafo.", lift: 0 },
 ];
 const ZS = 0.55;
 const ZK = 0.8 / ZS;
 for (const a of ASM) a.lift = Math.round(a.lift * ZK);
 const MV = { strapT: [0, -150], strapB: [0, 150], crown: [120, 0], pushS: [105, -60], pushR: [105, 60] };
-const ORDER = ["crown", "pushS", "pushR", "strapT", "strapB", "bezel", "hands", "dial", "motion", "cock", "bridgeHeart", "bridgeHook", "bridgePa", "bridges", "balance", "chrono", "escape", "train", "barrel", "plate", "rotor", "back"];
+const ORDER = ["crown", "pushS", "pushR", "strapT", "strapB", "bezel", "hands", "dial", "motion", "cock", "bridgeHeart", "bridgeHook", "bridgePa", "bridges", "balance", "chrono", "escape", "train", "barrel", "plate", "rotor", "back", "cushion"];
 const ID = Object.fromEntries(ASM.map((a, i) => [a.id, i]));
 
 const BOXES = [
@@ -90,7 +90,34 @@ const fitPoints = BOXES.flatMap((b) =>
 const P = k.fitProjection(fitPoints, WIDTH, HEIGHT, { pad: 18, azimuth: 75, elevation: 55, zs: ZS });
 const VB1 = [0, 0, WIDTH, HEIGHT];
 const S1_LIFT = 520;
+const BP = [
+  ["bezel", "Lunete", "Ø 44 mm · anel gravado"],
+  ["hands", "Ponteiros", "horas, minutos, segundos e cronógrafo"],
+  ["dial", "Mostrador", "Ø 40 mm · 60 pontos de minuteria"],
+  ["motion", "Minuteria", "redução 12:1"],
+  ["cock", "Ponte do balanço", "prende o eixo do balanço"],
+  ["bridgeHeart", "Ponte em coração", "assenta sobre a rodagem"],
+  ["bridgeHook", "Ponte em gancho", "cobre o alto do movimento"],
+  ["bridgePa", "Ponte em pá", "cobre a mola principal"],
+  ["bridges", "Pontes e catraca", "rubis e lingueta da mola"],
+  ["balance", "Balanço", "28.800 alt/h · 4 Hz"],
+  ["chrono", "Cronógrafo", "came, martelo e alavancas"],
+  ["escape", "Escapamento", "roda de 15 dentes · 16 rpm"],
+  ["train", "Rodagem", "80/10 · 80/10 · 75/10 · 96/6"],
+  ["barrel", "Barrilete", "reserva de cerca de 40 h"],
+  ["plate", "Platina", "Ø 40 mm · base do movimento"],
+  ["rotor", "Massa oscilante", "enrola a mola do barrilete"],
+  ["back", "Fundo com vidro", "Ø 44 mm · vidro de safira"],
+  ["case", "Caixa", "Ø 44 mm · altura 9 mm"],
+  ["crown", "Coroa", "dá corda e acerta a hora"],
+  ["pushS", "Pusher superior", "inicia e para o cronógrafo"],
+  ["pushR", "Pusher inferior", "zera o cronógrafo"],
+  ["pins", "Pinos de mola", "prendem as pulseiras"],
+  ["strapT", "Pulseira superior", "22 mm × 83 mm · fivela"],
+  ["strapB", "Pulseira inferior", "22 mm × 117 mm · 9 furos"],
+];
 const STAGE1 = Object.fromEntries(["bezel", "hands", "dial", "motion"].map((id) => [id, Math.round(S1_LIFT * ZK)]));
+STAGE1.cushion = ASM[ID.cushion].lift;
 const WELL_UP = 44;
 for (const id of ["plate", "barrel", "train", "escape", "balance", "bridges", "chrono", "bridgePa", "bridgeHook", "bridgeHeart", "cock"]) STAGE1[id] = WELL_UP;
 const VBM = (() => {
@@ -1063,12 +1090,13 @@ function draw() {
     const aim = spring[n.a] ? spring[n.a].target * n.m[2] : 0;
     n.lvl = aim > 60 || aim < -60 ? Math.round(aim / 40) * 40 : 0;
   }
-  const fade = { cushion: 1 - clamp01(spring.strapT.x * 4), pins: clamp01(spring.pins.x * 4) };
+  const fade = { pins: clamp01(spring.pins.x * 4) };
   for (const n of nodes) if (n.a in fade) n.el.style.opacity = String(fade[n.a].toFixed(3));
   const dtw = Math.max(0, state.clock - state.wrapClock);
   state.wrapClock = state.clock;
   for (const [sgn, key, loopId, strapId] of [[-1, "wrapT", "loopT", "strapT"], [1, "wrapB", "loopB", "strapB"]]) {
-    const want = state.stage !== 2 && spring[strapId].x === 0 && !spring[strapId].armed ? 1 : 0;
+    const home = spring[strapId].x === 0 && !spring[strapId].armed;
+    const want = state.stage === 1 ? (home ? 1 : 0) : state.stage === 0 && home && spring.cushion.x === 0 && !spring.cushion.armed ? 1 : 0;
     state[key] += Math.max(-dtw / 1.7, Math.min(dtw / 1.7, want - state[key]));
     const we = ease(0, 1, state[key]);
     for (const n of nodes) {
@@ -1117,6 +1145,15 @@ function draw() {
   const hh = Math.floor(td / 3600), mm = Math.floor((td % 3600) / 60), ss = Math.floor(td % 60);
   const hms = String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0") + ":" + String(ss).padStart(2, "0");
   const moving = ORDER.some((id) => spring[id].x !== spring[id].target || spring[id].armed);
+  document.body.toggleAttribute("data-blueprint", state.stage === 2);
+  const vbDone = state.vb.every((v, i) => Math.abs(v - VB1[i]) < 2);
+  const near = ORDER.every((id) => !spring[id].armed && Math.abs(spring[id].x - spring[id].target) < 0.02);
+  if (state.stage === 2 && near && vbDone) {
+    const rb = svgRoot.getBoundingClientRect();
+    const key = Math.round(rb.width) + "x" + Math.round(rb.height);
+    if (bpKey !== key) { bpKey = key; bpBuild(); }
+    bpG.setAttribute("data-show", "");
+  } else { bpG.removeAttribute("data-show"); bpKey = ""; }
   const phase = moving ? (state.apart ? "desmontando" : "montando") : spring.hands.x === 1 ? "desmontado" : "";
   const label = state.sel ? ASM.find((a) => a.id === state.sel).name : hms + " · " + (state.dateText || "") + " · " + (state.moonText || "") + (state.chrono.running || state.chrono.t > 0 ? " · cron " + state.chrono.t.toFixed(1) + " s" : "") + (state.slow ? " · câmera lenta" : "") + (state.setting ? " · acertando" : "") + (phase ? " · " + phase : "");
   if (label !== state.say) { state.say = label; readout.textContent = label; }
@@ -1136,7 +1173,8 @@ const LSH = ["var(--anatomy-shade-0)", "var(--anatomy-shade-1)", "var(--anatomy-
 const LUP = LOOP.DARK ? 1 : 0;
 const LVIEW = [Math.cos(75 * Math.PI / 180) * Math.cos(55 * Math.PI / 180), Math.sin(75 * Math.PI / 180) * Math.cos(55 * Math.PI / 180), Math.sin(55 * Math.PI / 180) * LOOP.ZS];
 const lfacing = (n) => n[0] * LVIEW[0] + n[1] * LVIEW[1] + n[2] * LVIEW[2];
-const ltone = (f) => LSH[Math.min(4, (f > 0.8 ? 4 : f > 0.62 ? 3 : f > 0.42 ? 2 : f > 0.2 ? 1 : 0) + LUP)];
+const lcl = (i) => Math.max(0, Math.min(4, i));
+const ltone = (f, bump) => LSH[lcl((f > 0.8 ? 4 : f > 0.62 ? 3 : f > 0.42 ? 2 : f > 0.2 ? 1 : 0) + LUP + bump)];
 function loopSvg(sign, w) {
   const { W, T, RW, TH0, TH1 } = LOOP;
   const [L, wEnd] = LOOP.L[sign];
@@ -1159,16 +1197,18 @@ function loopSvg(sign, w) {
     faces.push({ depth: depthOf(c, P), svg: '<path d="' + d + '" style="fill:' + fill + ";stroke:" + fill + ';stroke-width:.7;stroke-linejoin:round"/>' });
   };
   const to = T / 2, ti = -T / 2;
+  const bump = sign < 0 ? (LOOP.DARK ? 2 : -1) : 0;
+  const LB = LSH[lcl(LUP + bump)];
   for (let i = 0; i < N; i++) {
     const a = sec[i], b = sec[i + 1], m = (a.b + b.b) / 2;
     const n3 = [0, sign * Math.sin(m), Math.cos(m)];
     const fo = lfacing(n3);
-    if (fo > 0) addFace([pt(-a.hw, a, to), pt(-b.hw, b, to), pt(b.hw, b, to), pt(a.hw, a, to)], ltone(fo));
-    else addFace([pt(-a.hw, a, ti), pt(-b.hw, b, ti), pt(b.hw, b, ti), pt(a.hw, a, ti)], LSH[LUP]);
-    addFace([pt(a.hw, a, to), pt(b.hw, b, to), pt(b.hw, b, ti), pt(a.hw, a, ti)], LSH[LUP]);
+    if (fo > 0) addFace([pt(-a.hw, a, to), pt(-b.hw, b, to), pt(b.hw, b, to), pt(a.hw, a, to)], ltone(fo, bump));
+    else addFace([pt(-a.hw, a, ti), pt(-b.hw, b, ti), pt(b.hw, b, ti), pt(a.hw, a, ti)], LB);
+    addFace([pt(a.hw, a, to), pt(b.hw, b, to), pt(b.hw, b, ti), pt(a.hw, a, ti)], LB);
   }
   const e = sec[N], te = [0, sign * Math.cos(e.b), -Math.sin(e.b)];
-  if (lfacing(te) > 0) addFace([pt(-e.hw, e, to), pt(e.hw, e, to), pt(e.hw, e, ti), pt(-e.hw, e, ti)], LSH[1 + LUP]);
+  if (lfacing(te) > 0) addFace([pt(-e.hw, e, to), pt(e.hw, e, to), pt(e.hw, e, ti), pt(-e.hw, e, ti)], LSH[lcl(1 + LUP + bump)]);
   faces.sort((p, q) => p.depth - q.depth);
   const out = faces.map((f) => f.svg);
   const edgeL = [], edgeR = [], stitch = [], creases = [];
@@ -1189,6 +1229,96 @@ function hairPath(theta) {
   const pts = [], N = 140, turns = 11, r0 = 5.8, r1 = 24.8;
   for (let i = 0; i <= N; i++) { const t = i / N, a = turns * 2 * Math.PI * t + theta * Math.PI / 180 * (1 - t), r = r0 + (r1 - r0) * t * (1 + 0.012 * Math.sin(theta * Math.PI / 180)); pts.push(iso([BAL[0] + r * Math.cos(a), BAL[1] + r * Math.sin(a), 31.3], P)); }
   return pathOf(pts);
+}
+const BPDATA = ${JSON.stringify(BP)};
+const bpG = document.createElementNS("http://www.w3.org/2000/svg", "g");
+bpG.setAttribute("data-bp", "");
+svgRoot.appendChild(bpG);
+let bpKey = "";
+function bpBuild() {
+  const rect = svgRoot.getBoundingClientRect();
+  const ctm = svgRoot.getScreenCTM();
+  const inv = ctm.inverse();
+  const sc = ctm.a;
+  const pt = (x, y) => { const p = svgRoot.createSVGPoint(); p.x = x; p.y = y; const q = p.matrixTransform(inv); return [q.x, q.y]; };
+  const [vx0, vy0] = pt(rect.left, rect.top), [vx1, vy1] = pt(rect.right, rect.bottom);
+  const u = (px) => px / sc;
+  const fN = u(12.5), fS = u(10.5), lw = u(1);
+  const f1 = (v) => v.toFixed(1);
+  const box = (id) => {
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    nodes.filter((n) => n.a === id).forEach((n) => {
+      const r = n.el.getBoundingClientRect();
+      if (!r.width) return;
+      const a = pt(r.left, r.top), b = pt(r.right, r.bottom);
+      x0 = Math.min(x0, a[0]); y0 = Math.min(y0, a[1]); x1 = Math.max(x1, b[0]); y1 = Math.max(y1, b[1]);
+    });
+    return x1 < x0 ? null : [x0, y0, x1, y1];
+  };
+  const EDGE = { bezel: 1, dial: 1, plate: 1, back: 1, case: 1, rotor: 1 };
+  const mid = (vx0 + vx1) / 2;
+  const items = [];
+  BPDATA.forEach(([id, name, spec], i) => {
+    const b = box(id);
+    if (!b) return;
+    items.push({ id, name, spec, n: String(i + 1).padStart(2, "0"), b, cx: (b[0] + b[2]) / 2, cy: (b[1] + b[3]) / 2 });
+  });
+  items.sort((a, b) => a.cy - b.cy);
+  const cols = { L: [], R: [] };
+  items.forEach((it) => {
+    const off = it.cx - mid;
+    const side = Math.abs(off) < u(40) ? (cols.L.length <= cols.R.length ? "L" : "R") : off < 0 ? "L" : "R";
+    it.side = side;
+    cols[side].push(it);
+  });
+  const out = [];
+  const grid = [];
+  const step = u(48);
+  for (let x = vx0 + step; x < vx1; x += step) grid.push("M" + f1(x) + " " + f1(vy0) + "V" + f1(vy1));
+  for (let y = vy0 + step; y < vy1; y += step) grid.push("M" + f1(vx0) + " " + f1(y) + "H" + f1(vx1));
+  out.push('<path d="' + grid.join("") + '" style="fill:none;stroke:var(--anatomy-faint);stroke-width:' + (lw * 0.6).toFixed(2) + ';opacity:.55"/>');
+  const m = u(14);
+  out.push('<rect x="' + f1(vx0 + m) + '" y="' + f1(vy0 + m) + '" width="' + f1(vx1 - vx0 - 2 * m) + '" height="' + f1(vy1 - vy0 - 2 * m) + '" style="fill:none;stroke:var(--anatomy-mid);stroke-width:' + lw.toFixed(2) + '"/>');
+  const textW = (it) => Math.max((it.n.length + 1 + it.name.length) * fN * 0.62, it.spec.length * fS * 0.6);
+  const rowH = fN * 1.25 + fS * 1.25 + u(12);
+  const top = vy0 + u(40), bottom = vy1 - u(40);
+  for (const side of ["L", "R"]) {
+    const list = cols[side];
+    const w = Math.max(0, ...list.map(textW));
+    const xText = side === "L" ? vx0 + u(34) : vx1 - u(34) - w;
+    const xEdge = side === "L" ? xText + w + u(8) : xText - u(8);
+    let prev = top - rowH;
+    list.forEach((it) => { it.ly = Math.max(it.cy - fN * 0.4, prev + rowH); prev = it.ly; });
+    let next = bottom + rowH;
+    for (let i = list.length - 1; i >= 0; i--) { list[i].ly = Math.min(list[i].ly, next - rowH); next = list[i].ly; }
+    list.forEach((it) => {
+      const b = it.b;
+      const ax = EDGE[it.id] ? (side === "L" ? b[0] : b[2]) : it.cx;
+      const ay = it.cy;
+      const ty = it.ly + fN;
+      const ex = side === "L" ? xEdge + u(16) : xEdge - u(16);
+      const lineY = ty + u(3);
+      out.push('<path d="M' + f1(ax) + " " + f1(ay) + "L" + f1(ex) + " " + f1(lineY) + "L" + f1(xEdge) + " " + f1(lineY) + "L" + f1(side === "L" ? xText : xText + w) + " " + f1(lineY) + '" style="fill:none;stroke:var(--anatomy-hi);stroke-width:' + lw.toFixed(2) + '"/>');
+      out.push('<circle cx="' + f1(ax) + '" cy="' + f1(ay) + '" r="' + u(2.4).toFixed(2) + '" style="fill:var(--anatomy-top);stroke:none"/>');
+      out.push('<text x="' + f1(xText) + '" y="' + f1(ty) + '" style="font:600 ' + fN.toFixed(1) + 'px var(--anatomy-mono);fill:var(--anatomy-strong)">' + it.n + " " + it.name + "</text>");
+      out.push('<text x="' + f1(xText) + '" y="' + f1(lineY + fS * 1.35) + '" style="font:400 ' + fS.toFixed(1) + 'px var(--anatomy-mono);fill:var(--anatomy-text)">' + it.spec + "</text>");
+    });
+  }
+  const dim = (x0, x1, y, text, yExt) => {
+    const t = u(5);
+    out.push('<path d="M' + f1(x0) + " " + f1(yExt) + "V" + f1(y + t) + "M" + f1(x1) + " " + f1(yExt) + "V" + f1(y + t) + "M" + f1(x0) + " " + f1(y) + "H" + f1(x1) + "M" + f1(x0) + " " + f1(y) + "l" + f1(t) + " " + f1(-t / 2) + "M" + f1(x0) + " " + f1(y) + "l" + f1(t) + " " + f1(t / 2) + "M" + f1(x1) + " " + f1(y) + "l" + f1(-t) + " " + f1(-t / 2) + "M" + f1(x1) + " " + f1(y) + "l" + f1(-t) + " " + f1(t / 2) + '" style="fill:none;stroke:var(--anatomy-hi);stroke-width:' + lw.toFixed(2) + '"/>');
+    out.push('<text x="' + f1((x0 + x1) / 2) + '" y="' + f1(y - u(5)) + '" text-anchor="middle" style="font:600 ' + fS.toFixed(1) + 'px var(--anatomy-mono);fill:var(--anatomy-strong)">' + text + "</text>");
+  };
+  const bb = box("back"), bs = box("strapB");
+  if (bb) dim(bb[0], bb[2], bb[3] + u(22), "Ø 44 mm", bb[3] + u(2));
+  if (bs) dim(bs[0], bs[2], bs[1] - u(18), "22 mm", bs[1] - u(2));
+  const tw = u(236), th = u(66), tx = vx1 - m - tw, ty0 = vy1 - m - th;
+  out.push('<rect x="' + f1(tx) + '" y="' + f1(ty0) + '" width="' + f1(tw) + '" height="' + f1(th) + '" style="fill:var(--anatomy-card);stroke:var(--anatomy-mid);stroke-width:' + lw.toFixed(2) + '"/>');
+  out.push('<path d="M' + f1(tx) + " " + f1(ty0 + th * 0.42) + "H" + f1(tx + tw) + '" style="fill:none;stroke:var(--anatomy-mid);stroke-width:' + lw.toFixed(2) + '"/>');
+  out.push('<text x="' + f1(tx + u(10)) + '" y="' + f1(ty0 + th * 0.3) + '" style="font:600 ' + fN.toFixed(1) + 'px var(--anatomy-mono);fill:var(--anatomy-strong)">ANATOMY · VISTA EXPLODIDA</text>');
+  out.push('<text x="' + f1(tx + u(10)) + '" y="' + f1(ty0 + th * 0.66) + '" style="font:400 ' + fS.toFixed(1) + 'px var(--anatomy-mono);fill:var(--anatomy-text)">Cronógrafo automático · 28.800 alt/h</text>');
+  out.push('<text x="' + f1(tx + u(10)) + '" y="' + f1(ty0 + th * 0.88) + '" style="font:400 ' + fS.toFixed(1) + 'px var(--anatomy-mono);fill:var(--anatomy-muted)">Medidas em mm · 1 mm = 7,5 un.</text>');
+  bpG.innerHTML = out.join("");
 }
 const TOUR = [...ORDER];
 function tour(dt) {
@@ -1287,11 +1417,15 @@ html,body{height:100%;overflow:hidden}
 .iso-figure{margin:0!important;flex:1;min-width:0;min-height:0;display:flex}
 .iso-plate{flex:1;min-width:0;min-height:0;display:flex;box-sizing:border-box;padding:6px!important}
 .iso-stage{flex:1;min-width:0;min-height:0;width:auto!important;height:auto!important}
-.iso-stage svg,.iso-stage .iso-svg{width:100%!important;height:100%!important;margin:0!important;max-width:none!important}
+.iso-stage{overflow:hidden!important}
+.iso-stage svg,.iso-stage .iso-svg{overflow:hidden!important;width:100%!important;height:100%!important;margin:0!important;max-width:none!important}
 .iso-fill{fill-rule:evenodd}
 .iso-plate-corners,.iso-legend{display:none!important}
 .tf-parts,.tf-clock,.tf-bar .tf-btn:not([data-toggle]){display:none!important}
 .push{cursor:pointer}
+[data-bp]{pointer-events:none;opacity:0;transition:opacity .5s}
+[data-bp][data-show]{opacity:1}
+[data-blueprint] .tf-info{visibility:hidden}
 .seam{fill:none;stroke:var(--anatomy-top);stroke-width:2.6;stroke-linecap:butt}
 .stars circle{fill:var(--anatomy-paper)!important;opacity:.9!important}
 .glare{fill:#fff;opacity:.22;pointer-events:none}
