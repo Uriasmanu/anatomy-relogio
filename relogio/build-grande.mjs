@@ -69,6 +69,9 @@ const ASM = [
   { id: "loopB", name: "Pulseira fechada (baixo)", does: "", lift: 0 },
   { id: "case", name: "Caixa, coroa e pulseira", does: "Carrura com as hastes que prendem a pulseira de couro. A coroa dá corda e, puxada, ajusta a hora (e para o balanço para acertar o segundo). Os dois pushers laterais comandam o cronógrafo.", lift: 0 },
 ];
+const ZS = 0.55;
+const ZK = 0.8 / ZS;
+for (const a of ASM) a.lift = Math.round(a.lift * ZK);
 const MV = { strapT: [0, -150], strapB: [0, 150], crown: [120, 0], pushS: [105, -60], pushR: [105, 60] };
 const ORDER = ["crown", "pushS", "pushR", "strapT", "strapB", "bezel", "hands", "dial", "motion", "cock", "bridgeHeart", "bridgeHook", "bridgePa", "bridges", "balance", "chrono", "escape", "train", "barrel", "plate", "rotor", "back"];
 const ID = Object.fromEntries(ASM.map((a, i) => [a.id, i]));
@@ -83,11 +86,11 @@ const BOXES = [
 const fitPoints = BOXES.flatMap((b) =>
   [0, 1].flatMap((t) => k.boxCorners({ x: b.x0, y: b.y0, w: b.x1 - b.x0, d: b.y1 - b.y0, r: 0 }, b.z0 + b.lift * t, b.z1 + b.lift * t)),
 );
-const P = k.fitProjection(fitPoints, WIDTH, HEIGHT, { pad: 18, azimuth: 75, elevation: 55, zs: 0.8 });
+const P = k.fitProjection(fitPoints, WIDTH, HEIGHT, { pad: 18, azimuth: 75, elevation: 55, zs: ZS });
 const VB1 = [0, 0, WIDTH, HEIGHT];
-const STAGE1 = { bezel: 700, hands: 700, dial: 700, motion: 700 };
+const STAGE1 = Object.fromEntries(["bezel", "hands", "dial", "motion"].map((id) => [id, Math.round(700 * ZK)]));
 const VBM = (() => {
-  const pts = k.boxCorners({ x: -225, y: -330, w: 450, d: 670, r: 0 }, -130, 62 + 440).map((q) => k.iso(q, P));
+  const pts = k.boxCorners({ x: -225, y: -330, w: 450, d: 670, r: 0 }, -130, 62 + 440 * ZK).map((q) => k.iso(q, P));
   const xs = pts.map((q) => q[0]);
   const ys = pts.map((q) => q[1]);
   const x0 = Math.min(...xs) - 30;
@@ -684,7 +687,7 @@ function caseBack() {
   for (let i = 0; i <= 16; i++) gl.push(polar(0, 0, 104, rad(200 + (60 * i) / 16)));
   for (let i = 16; i >= 0; i--) gl.push(polar(8, 6, 86, rad(200 + (60 * i) / 16)));
   out.push(`<path class="glare" d="${k.onTop(gl, z + 5.1, P, true)}"/>`);
-  put("back", z + 8, [0, 0, z + 8], out.join(""), 0);
+  put("back", z + 8, [0, 0, z + 8], out.join(""), KEY_BACK - 2);
 }
 
 const FACE = Math.atan2(k.towardViewer(P)[1], k.towardViewer(P)[0]);
@@ -824,7 +827,7 @@ function loops() {
   const th0 = Math.asin(140 / RW);
   const th1 = (58 * Math.PI) / 180;
   const N = 28;
-  const view = [Math.cos(rad(75)) * Math.cos(rad(55)), Math.sin(rad(75)) * Math.cos(rad(55)), Math.sin(rad(55)) * 0.8];
+  const view = [Math.cos(rad(75)) * Math.cos(rad(55)), Math.sin(rad(75)) * Math.cos(rad(55)), Math.sin(rad(55)) * ZS];
   const facing = (n) => n[0] * view[0] + n[1] * view[1] + n[2] * view[2];
   const SH = ["var(--anatomy-shade-0)", "var(--anatomy-shade-1)", "var(--anatomy-shade-2)", "var(--anatomy-shade-3)", "var(--anatomy-top)"];
   const up = theme === "dark" ? 1 : 0;
@@ -1149,7 +1152,7 @@ function draw() {
   const label = state.sel ? ASM.find((a) => a.id === state.sel).name : hms + " · " + (state.dateText || "") + " · " + (state.moonText || "") + (state.chrono.running || state.chrono.t > 0 ? " · cron " + state.chrono.t.toFixed(1) + " s" : "") + (state.slow ? " · câmera lenta" : "") + (state.setting ? " · acertando" : "") + (phase ? " · " + phase : "");
   if (label !== state.say) { state.say = label; readout.textContent = label; }
   clockEl.textContent = hms + "  ·  reserva " + Math.round(state.reserve) + " h";
-  toggle.textContent = state.apart ? "Montar" : "Desmontar";
+  toggle.textContent = ["Desmontar", "Desmontar mais", "Montar"][state.stage];
 }
 function springSvg(w) {
   const r0 = 8, r1 = 12 + w * 22, turns = 8, N = 220;
@@ -1186,7 +1189,7 @@ function tick(now) {
 function run() { if (!frame && visible) { last = 0; frame = requestAnimationFrame(tick); } }
 const take = () => { state.touring = false; state.idle = 0; };
 new IntersectionObserver((entries) => { visible = entries[entries.length - 1].isIntersecting; if (visible) run(); }, { rootMargin: "120px 0px" }).observe(stage);
-toggle.addEventListener("click", () => { take(); setApart(!state.apart); });
+toggle.addEventListener("click", () => { take(); setStage((state.stage + 1) % 3); });
 chronoBtn.addEventListener("click", () => { take(); chronoStartStop(); });
 resetBtn.addEventListener("click", () => { take(); chronoReset(); });
 slowBtn.addEventListener("click", () => { take(); state.slow = !state.slow; slowBtn.toggleAttribute("data-on", state.slow); });
@@ -1229,7 +1232,7 @@ stage.addEventListener("click", (event) => { take(); const id = pickAt(event); s
 stage.addEventListener("keydown", (event) => {
   const ids = ASM.map((a) => a.id);
   const at = state.sel ? ids.indexOf(state.sel) : -1;
-  if (event.key === " " || event.key === "Enter") { event.preventDefault(); take(); setApart(!state.apart); }
+  if (event.key === " " || event.key === "Enter") { event.preventDefault(); take(); setStage((state.stage + 1) % 3); }
   else if (event.key === "Escape") { take(); select(null); }
   else if (event.key === "Home") { take(); setApart(false); }
   else if (event.key === "End") { take(); setApart(true); }
