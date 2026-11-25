@@ -118,7 +118,7 @@ const BP = [
 ];
 const STAGE1 = Object.fromEntries(["bezel", "hands", "dial", "motion"].map((id) => [id, Math.round(S1_LIFT * ZK)]));
 STAGE1.cushion = ASM[ID.cushion].lift;
-const SPREAD = { bezel: -250, hands: 225, dial: -195, motion: 250, cock: -245, bridgeHeart: 185, bridgeHook: -215, bridgePa: 245, bridges: -170, balance: 250, chrono: -250, escape: 200, train: -240, barrel: 235, plate: -180, rotor: 250, back: -250, case: 245 };
+const SPREAD = { bezel: -250, hands: 120, dial: -120, motion: 250, cock: -245, bridgeHeart: 130, bridgeHook: -215, bridgePa: 245, bridges: -125, balance: 250, chrono: -250, escape: 135, train: -240, barrel: 140, plate: -130, rotor: 250, back: -250, case: 245 };
 const SPREAD_AMP = 1;
 const SPREADZ = { bezel: 530, dial: 120, cock: 0, bridgeHook: -490, bridges: -850, chrono: -1540, train: -1870, plate: -2150, back: -2330, hands: 530, motion: 160, bridgeHeart: -160, bridgePa: -325, balance: -610, escape: -1220, barrel: -1700, rotor: -2320, case: -2420 };
 const SPREAD_DIR = [Math.sin(rad(75)), -Math.cos(rad(75))];
@@ -1095,7 +1095,7 @@ function draw() {
     const rb = svgRoot.getBoundingClientRect();
     const sc2 = Math.min(rb.width / VB1[2], rb.height / VB1[3]);
     const vbw = Math.abs(iso([SPREAD_DIR[0], SPREAD_DIR[1], 0], P)[0] - iso([0, 0, 0], P)[0]);
-    spScale = Math.max(0.5, Math.min(4, ((rb.width - 600) / 2 - 0) / (sc2 * vbw) / 250));
+    spScale = Math.max(0.5, Math.min(9, ((rb.width - 310) / 2) / (sc2 * vbw) / 250));
     state.spScale = spScale;
     state.spZk = Math.max(0.5, sc2 / 0.612);
   }
@@ -1272,10 +1272,11 @@ function bpBuild() {
   const sc = ctm.a;
   const pt = (x, y) => { const p = svgRoot.createSVGPoint(); p.x = x; p.y = y; const q = p.matrixTransform(inv); return [q.x, q.y]; };
   const [vx0, vy0] = pt(rect.left, rect.top), [vx1, vy1] = pt(rect.right, rect.bottom);
-  const u = (px) => px / sc;
+  const k = Math.max(0.58, Math.min(1, rect.width / 1440, rect.height / 820));
+  const u = (px) => px * k / sc;
   const f1 = (v) => v.toFixed(1);
   const HAND = "'Ink Free','Segoe Print','Bradley Hand','Chalkboard SE','Comic Sans MS',cursive";
-  const fN = u(14.5), fS = u(12), lw = u(1.3);
+  const fN = u(14.5), fS = u(12), lw = 1.3 / sc;
   let seed = 90210;
   const rnd = () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const hand = (pts, amp) => {
@@ -1337,7 +1338,10 @@ function bpBuild() {
   out.push('<path d="' + grid.join("") + '" style="fill:none;stroke:var(--anatomy-faint);stroke-width:' + (lw * 0.55).toFixed(2) + ';opacity:.45"/>');
   const m = u(16);
   out.push(ln([[vx0 + m, vy0 + m], [vx1 - m, vy0 + m], [vx1 - m, vy1 - m], [vx0 + m, vy1 - m], [vx0 + m, vy0 + m]], "var(--anatomy-mid)", lw, u(1.4), 0));
-  const tw = u(260), th = u(74), bx = vx1 - m - tw - u(14), by = vy0 + m + u(14);
+  const tw = u(260), th = u(74), e0 = m + u(14);
+  const spots = [[vx1 - e0 - tw, vy0 + e0], [vx0 + e0, vy0 + e0], [vx1 - e0 - tw, vy1 - e0 - th], [vx0 + e0, vy1 - e0 - th]];
+  const overlap = (p) => items.reduce((a, o) => a + (o.b[0] < p[0] + tw + u(30) && o.b[2] > p[0] - u(30) && o.b[1] < p[1] + th + u(30) && o.b[3] > p[1] - u(30) ? 1 : 0), 0);
+  const [bx, by] = spots.reduce((best, p) => (overlap(p) < overlap(best) ? p : best), spots[0]);
   const bb = box("back"), bs = box("strapB");
   const blocks = [[bx, by, bx + tw, by + th]];
   if (bb) blocks.push([bb[0] - u(4), bb[3] + u(2), bb[2] + u(4), bb[3] + u(44)]);
@@ -1345,7 +1349,7 @@ function bpBuild() {
   const pad = u(6);
   const hit = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
   const inflate = (b, d) => [b[0] - d, b[1] - d, b[2] + d, b[3] + d];
-  const placed = [];
+  const placed = [], leaders = [];
   const lh = fN * 1.25 + fS * 1.25 + u(8);
   const gap = u(26);
   const free = (r, self) => {
@@ -1358,39 +1362,59 @@ function bpBuild() {
   [...items].sort((p, q) => q.cy - p.cy).forEach((it) => {
     const b = it.b;
     const sides = it.cx < mid ? ["L", "R"] : ["R", "L"];
-    let pick = null;
-    for (const gm of [1, 1.8, 2.8]) {
-      for (const dyk of [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7, -8, 8]) {
-        for (const side of sides) {
-          const ty0 = it.cy - fN * 0.8 + dyk * u(24);
-          const x0 = side === "L" ? b[0] - gap * gm - it.w : b[2] + gap * gm;
-          const r = [x0 - pad, ty0 - pad, x0 + it.w + pad, ty0 + lh + pad];
-          if (free(r, it)) { pick = { side, x0, ty0, r }; break; }
-        }
-        if (pick) break;
+    const lead = (side, x0, ty0) => {
+      const vert = side === "U" || side === "D";
+      const ax = vert ? it.cx : EDGE[it.id] ? (side === "L" ? b[0] : b[2]) : it.cx;
+      const ay = vert && EDGE[it.id] ? (side === "U" ? b[1] : b[3]) : it.cy;
+      const lineY = ty0 + fN + u(5);
+      const e = vert ? [Math.max(x0 + u(12), Math.min(x0 + it.w - u(12), ax)), side === "U" ? ty0 + lh : ty0] : [side === "L" ? x0 + it.w + u(16) : x0 - u(16), lineY];
+      return [[ax, ay], e];
+    };
+    const inBox = (p, q) => p[0] > q[0] && p[0] < q[2] && p[1] > q[1] && p[1] < q[3];
+    const cross = (p, q, r, t) => {
+      const o = (a, b2, c) => (b2[0] - a[0]) * (c[1] - a[1]) - (b2[1] - a[1]) * (c[0] - a[0]);
+      return o(p, q, r) * o(p, q, t) < 0 && o(r, t, p) * o(r, t, q) < 0;
+    };
+    const clear = (seg) => {
+      for (let i = 1; i < 28; i++) {
+        const t = i / 28, p = [seg[0][0] + (seg[1][0] - seg[0][0]) * t, seg[0][1] + (seg[1][1] - seg[0][1]) * t];
+        if (items.some((o) => o !== it && inBox(p, inflate(o.b, u(4))))) return false;
+        if (blocks.some((q) => inBox(p, q)) || placed.some((q) => inBox(p, q))) return false;
       }
-      if (pick) break;
-    }
-    if (!pick) {
+      return !leaders.some((l) => cross(seg[0], seg[1], l[0], l[1]));
+    };
+    const search = (strict) => {
+      const ok = (side, x0, ty0) => {
+        const r = [x0 - pad, ty0 - pad, x0 + it.w + pad, ty0 + lh + pad];
+        return free(r, it) && (!strict || clear(lead(side, x0, ty0))) ? { side, x0, ty0, r } : null;
+      };
+      let pick = null;
+      for (const gm of [1, 1.8, 2.8, 4]) {
+        for (const dyk of [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7, -8, 8]) {
+          for (const side of sides) {
+            pick = ok(side, side === "L" ? b[0] - gap * gm - it.w : b[2] + gap * gm, it.cy - fN * 0.8 + dyk * u(24));
+            if (pick) return pick;
+          }
+        }
+      }
       for (const gm of [1, 1.8, 2.8]) {
         for (const dxk of [0, -1, 1, -2, 2, -3, 3]) {
           for (const side of ["U", "D"]) {
-            const x0 = it.cx - it.w / 2 + dxk * u(30);
-            const ty0 = side === "U" ? b[1] - gap * gm - lh : b[3] + gap * gm;
-            const r = [x0 - pad, ty0 - pad, x0 + it.w + pad, ty0 + lh + pad];
-            if (free(r, it)) { pick = { side, x0, ty0, r }; break; }
+            pick = ok(side, it.cx - it.w / 2 + dxk * u(30), side === "U" ? b[1] - gap * gm - lh : b[3] + gap * gm);
+            if (pick) return pick;
           }
-          if (pick) break;
         }
-        if (pick) break;
       }
-    }
+      return null;
+    };
+    let pick = search(true) || search(false);
     if (!pick) {
       const side = sides[0];
       const x0 = side === "L" ? b[0] - gap - it.w : b[2] + gap;
       const ty0 = it.cy - fN * 0.8;
       pick = { side, x0, ty0, r: [x0, ty0, x0 + it.w, ty0 + lh] };
     }
+    leaders.push(lead(pick.side, pick.x0, pick.ty0));
     placed.push(pick.r);
     const side = pick.side;
     const vert = side === "U" || side === "D";
