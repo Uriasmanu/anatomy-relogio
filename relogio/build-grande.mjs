@@ -67,6 +67,7 @@ const ASM = [
   { id: "pushR", name: "Pusher inferior", does: "", lift: 0 },
   { id: "loopT", name: "Pulseira fechada (alto)", does: "", lift: 0 },
   { id: "loopB", name: "Pulseira fechada (baixo)", does: "", lift: 0 },
+  { id: "cushion", name: "Almofada", does: "Almofada de apoio usada para mostrar o relógio montado.", lift: 0 },
   { id: "case", name: "Caixa, coroa e pulseira", does: "Carrura com as hastes que prendem a pulseira de couro. A coroa dá corda e, puxada, ajusta a hora (e para o balanço para acertar o segundo). Os dois pushers laterais comandam o cronógrafo.", lift: 0 },
 ];
 const ZS = 0.55;
@@ -102,7 +103,7 @@ const VBM = (() => {
   return [x0, y0, Math.max(...xs) + 30 - x0, hh];
 })();
 const VB0 = (() => {
-  const pts = k.boxCorners({ x: -225, y: -330, w: 450, d: 670, r: 0 }, -130, 62).map((q) => k.iso(q, P));
+  const pts = k.boxCorners({ x: -260, y: -330, w: 520, d: 670, r: 0 }, -260, 62).map((q) => k.iso(q, P));
   const xs = pts.map((q) => q[0]);
   const ys = pts.map((q) => q[1]);
   const x0 = Math.min(...xs) - 30;
@@ -822,68 +823,19 @@ function strap() {
   put("strapT", 8, [0, -400, 6], `<g class="strap">${up.join("")}${keep.join("")}</g><g class="buckle">${buckle.join("")}</g>`, -2e6);
   put("strapB", 8, [0, 500, 6], `<g class="strap">${piece(1, 880, 142, true, true).join("")}</g>`, KEY_FRONT - 200);
 }
+const RW_LOOP = 300;
+const CUSH_L = 255;
+function cushion() {
+  const ZC = 5 - Math.sqrt(RW_LOOP * RW_LOOP - 140 * 140);
+  const R = RW_LOOP - 11;
+  const F = G.frameAlong([-CUSH_L, 0, ZC], [1, 0, 0]);
+  const dome = [[0, R * 0.55, 1], [5, R * 0.8, 1], [13, R * 0.92, 1], [26, R * 0.98, 1], [44, R, 1]];
+  const prof = [...dome, ...dome.slice().reverse().map(([x, r]) => [2 * CUSH_L - x, r, 1])];
+  const body = S(G.solidOf(prof, F, P, { smooth: { rows: 28 } }), { tone: "hi", crease: "lo" });
+  put("cushion", 0, [0, 0, ZC], body, -4e6);
+}
 function loops() {
-  const W = 166;
-  const T = 22;
-  const RW = 380;
-  const ZC = 5 - Math.sqrt(RW * RW - 140 * 140);
-  const th0 = Math.asin(140 / RW);
-  const th1 = (58 * Math.PI) / 180;
-  const N = 28;
-  const view = [Math.cos(rad(75)) * Math.cos(rad(55)), Math.sin(rad(75)) * Math.cos(rad(55)), Math.sin(rad(55)) * ZS];
-  const facing = (n) => n[0] * view[0] + n[1] * view[1] + n[2] * view[2];
-  const SH = ["var(--anatomy-shade-0)", "var(--anatomy-shade-1)", "var(--anatomy-shade-2)", "var(--anatomy-shade-3)", "var(--anatomy-top)"];
-  const up = theme === "dark" ? 1 : 0;
-  const tone = (f) => SH[Math.min(4, (f > 0.8 ? 4 : f > 0.62 ? 3 : f > 0.42 ? 2 : f > 0.2 ? 1 : 0) + up)];
-  const f1 = (v) => v.toFixed(1);
-  for (const sign of [-1, 1]) {
-    const w3 = (x, th, r) => [x, sign * r * Math.sin(th), ZC + r * Math.cos(th)];
-    const faces = [];
-    const addFace = (pts3, normal, fill, extra = "") => {
-      const c = pts3.reduce((a2, q) => [a2[0] + q[0] / pts3.length, a2[1] + q[1] / pts3.length, a2[2] + q[2] / pts3.length], [0, 0, 0]);
-      const d = "M" + pts3.map((q) => at(q).map(f1).join(" ")).join("L") + "Z";
-      faces.push({ depth: k.depthOf(c, P), svg: `<path d="${d}" style="fill:${fill};stroke:${fill};stroke-width:.7;stroke-linejoin:round"${extra}/>` });
-    };
-    for (let i = 0; i < N; i++) {
-      const ta = th0 + ((th1 - th0) * i) / N;
-      const tb = th0 + ((th1 - th0) * (i + 1)) / N;
-      const tm = (ta + tb) / 2;
-      const nOut = [0, sign * Math.sin(tm), Math.cos(tm)];
-      const fo = facing(nOut);
-      const ro = RW + T / 2;
-      const ri = RW - T / 2;
-      if (fo > 0) addFace([w3(-W / 2, ta, ro), w3(-W / 2, tb, ro), w3(W / 2, tb, ro), w3(W / 2, ta, ro)], nOut, tone(fo));
-      else addFace([w3(-W / 2, ta, ri), w3(-W / 2, tb, ri), w3(W / 2, tb, ri), w3(W / 2, ta, ri)], nOut, SH[up]);
-      addFace([w3(W / 2, ta, ro), w3(W / 2, tb, ro), w3(W / 2, tb, ri), w3(W / 2, ta, ri)], [1, 0, 0], SH[up]);
-    }
-    const te = th1;
-    const tn = [0, sign * Math.cos(te), -Math.sin(te)];
-    if (facing(tn) > 0) addFace([w3(-W / 2, te, RW + T / 2), w3(W / 2, te, RW + T / 2), w3(W / 2, te, RW - T / 2), w3(-W / 2, te, RW - T / 2)], tn, SH[1 + up]);
-    faces.sort((a2, b2) => a2.depth - b2.depth);
-    const out = faces.map((f) => f.svg);
-    const creases = [];
-    const stitch = [];
-    for (let i = 0; i <= N * 2; i++) {
-      const th = th0 + ((th1 - th0) * i) / (N * 2);
-      const nOut = [0, sign * Math.sin(th), Math.cos(th)];
-      if (facing(nOut) <= 0) continue;
-      const ro = RW + T / 2 + 0.3;
-      for (const x of [-W / 2 + 8, W / 2 - 8]) stitch.push(at(w3(x, th, ro)));
-      if (i % 9 === 4) creases.push(k.pathOf([at(w3(-W / 2 + 18, th, ro)), at(w3(W / 2 - 18, th, ro))]));
-    }
-    const edgeL = [];
-    const edgeR = [];
-    for (let i = 0; i <= N; i++) {
-      const th = th0 + ((th1 - th0) * i) / N;
-      if (facing([0, sign * Math.sin(th), Math.cos(th)]) <= 0) continue;
-      edgeL.push(at(w3(-W / 2, th, RW + T / 2)));
-      edgeR.push(at(w3(W / 2, th, RW + T / 2)));
-    }
-    if (edgeL.length > 1) out.push(`<path class="iso-line" data-tone="hi" d="${k.pathOf(edgeL)}"/><path class="iso-line" data-tone="hi" d="${k.pathOf(edgeR)}"/>`);
-    out.push(k.dotsSvg(stitch, { size: 0.9, tone: "hi" }));
-    if (creases.length) out.push(`<path class="iso-line" data-tone="lo" data-free="" d="${creases.join("")}" style="opacity:.5"/>`);
-    put(sign < 0 ? "loopT" : "loopB", 8, [0, sign * 300, 4], `<g class="strap">${out.join("")}</g>`, sign < 0 ? -2e6 : KEY_FRONT - 200);
-  }
+  for (const sign of [-1, 1]) put(sign < 0 ? "loopT" : "loopB", 8, [0, sign * 300, 4], '<g class="strap"></g>', sign < 0 ? -2e6 : KEY_FRONT - 200);
 }
 function label2(x, y, z, a, text, size) {
   return k.faceTextSvg(textMatrix(x, y, z, a, size), text, { size, tone: "lo", anchor: "middle" });
@@ -944,6 +896,7 @@ hands();
 rotor();
 caseBack();
 caseMiddle();
+cushion();
 strap();
 loops();
 pins();
@@ -1011,7 +964,7 @@ const SUB_T = ${JSON.stringify(SUB_T)}, RES = ${JSON.stringify(RES)}, SUB_L = ${
 const springEl = svgRoot.querySelector("[data-spring]");
 const spring = Object.fromEntries(ASM.map((a) => [a.id, { x: 0, v: 0, target: 0, at: 0 }]));
 const now = new Date();
-const state = { stage: 0, vb: VB0.slice(), apart: false, sel: null, clock: 0, touring: false, tourT: 0, idle: 0, say: "", tsim: now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds() + now.getMilliseconds() / 1000, offset: 0, slow: false, mid: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(), chrono: { running: false, t: 0 }, press: null, moonP: -1, cal: "", setting: false, reserve: 36, rotor: 0, rotorV: 0, wound: 0.8, crownX: 0, dragging: false };
+const state = { wrapT: 1, wrapB: 1, wrapClock: 0, stage: 0, vb: VB0.slice(), apart: false, sel: null, clock: 0, touring: false, tourT: 0, idle: 0, say: "", tsim: now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds() + now.getMilliseconds() / 1000, offset: 0, slow: false, mid: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(), chrono: { running: false, t: 0 }, press: null, moonP: -1, cal: "", setting: false, reserve: 36, rotor: 0, rotorV: 0, wound: 0.8, crownX: 0, dragging: false };
 let frame = 0, last = 0, visible = false;
 const STAGGER = 0.035, STIFF = 64, DRAG = 14.2;
 const AMP = 270, LEVER_AMP = 7.5, BEAT = 8;
@@ -1026,7 +979,7 @@ function setStage(n) {
   state.apart = n > 0;
   const tg = (id) => (n === 2 ? 1 : n === 1 && STAGE1[id] ? STAGE1[id] / LIFTS[id] : 0);
   const seq = (opening ? ORDER : [...ORDER].reverse()).filter((id) => spring[id].target !== tg(id));
-  seq.forEach((id, i) => { spring[id].target = tg(id); spring[id].at = state.clock + (together ? 0 : i * STAGGER); spring[id].armed = true; });
+  seq.forEach((id, i) => { spring[id].target = tg(id); spring[id].at = state.clock + (together ? 0 : i * STAGGER) + (opening && (id === "strapT" || id === "strapB") ? 1.7 : 0); spring[id].armed = true; });
   run();
 }
 const setApart = (on) => setStage(on ? 2 : 0);
@@ -1110,8 +1063,21 @@ function draw() {
     const aim = spring[n.a] ? spring[n.a].target * n.m[2] : 0;
     n.lvl = aim > 60 || aim < -60 ? Math.round(aim / 40) * 40 : 0;
   }
-  const fade = { loopT: 1 - clamp01(spring.strapT.x * 4), strapT: clamp01(spring.strapT.x * 4), loopB: 1 - clamp01(spring.strapB.x * 4), strapB: clamp01(spring.strapB.x * 4), pins: clamp01(spring.pins.x * 4) };
+  const fade = { cushion: 1 - clamp01(spring.strapT.x * 4), pins: clamp01(spring.pins.x * 4) };
   for (const n of nodes) if (n.a in fade) n.el.style.opacity = String(fade[n.a].toFixed(3));
+  const dtw = Math.max(0, state.clock - state.wrapClock);
+  state.wrapClock = state.clock;
+  for (const [sgn, key, loopId, strapId] of [[-1, "wrapT", "loopT", "strapT"], [1, "wrapB", "loopB", "strapB"]]) {
+    const want = state.stage !== 2 && spring[strapId].x === 0 && !spring[strapId].armed ? 1 : 0;
+    state[key] += Math.max(-dtw / 1.7, Math.min(dtw / 1.7, want - state[key]));
+    const we = ease(0, 1, state[key]);
+    for (const n of nodes) {
+      if (n.a === loopId) {
+        n.el.style.opacity = we > 0 ? "1" : "0";
+        if (n.wv !== we) { n.wv = we; if (we > 0) n.el.innerHTML = loopSvg(sgn, we); }
+      } else if (n.a === strapId) n.el.style.opacity = we > 0 ? "0" : "1";
+    }
+  }
   const goal = [VB0, VBM, VB1][state.stage];
   for (let i = 0; i < 4; i++) state.vb[i] += (goal[i] - state.vb[i]) * 0.07;
   svgRoot.setAttribute("viewBox", state.vb.map((v) => v.toFixed(2)).join(" "));
@@ -1163,6 +1129,61 @@ function springSvg(w) {
   for (let i = 0; i <= N; i++) { const t = i / N, a = turns * 2 * Math.PI * t, r = r0 + (r1 - r0) * t; pts.push(iso([SPRING_CENTER[0] + r * Math.cos(a), SPRING_CENTER[1] + r * Math.sin(a), 9.1], P)); }
   for (let i = 0; i <= 90; i++) { const t = i / 90, a = 3 * 2 * Math.PI * t + 1, rr = 33.5 - t * (33.5 - Math.max(r1 + 2, 18)) * 0.6; outer.push(iso([SPRING_CENTER[0] + rr * Math.cos(a), SPRING_CENTER[1] + rr * Math.sin(a), 9.1], P)); }
   return '<path class="iso-line" data-tone="hi" d="' + pathOf(pts) + '"/><path class="iso-line" data-tone="mid" d="' + pathOf(outer) + '"/>';
+}
+const LOOP = { W: 166, T: 22, RW: ${RW_LOOP}, TH1: 85 * Math.PI / 180, L: { "-1": [628, 156], "1": [880, 142] }, DARK: ${theme === "dark"}, ZS: ${ZS} };
+LOOP.TH0 = Math.asin(140 / LOOP.RW);
+const LSH = ["var(--anatomy-shade-0)", "var(--anatomy-shade-1)", "var(--anatomy-shade-2)", "var(--anatomy-shade-3)", "var(--anatomy-top)"];
+const LUP = LOOP.DARK ? 1 : 0;
+const LVIEW = [Math.cos(75 * Math.PI / 180) * Math.cos(55 * Math.PI / 180), Math.sin(75 * Math.PI / 180) * Math.cos(55 * Math.PI / 180), Math.sin(55 * Math.PI / 180) * LOOP.ZS];
+const lfacing = (n) => n[0] * LVIEW[0] + n[1] * LVIEW[1] + n[2] * LVIEW[2];
+const ltone = (f) => LSH[Math.min(4, (f > 0.8 ? 4 : f > 0.62 ? 3 : f > 0.42 ? 2 : f > 0.2 ? 1 : 0) + LUP)];
+function loopSvg(sign, w) {
+  const { W, T, RW, TH0, TH1 } = LOOP;
+  const [L, wEnd] = LOOP.L[sign];
+  const sEnd = L - w * (L - RW * (TH1 - TH0));
+  const alpha = w * TH0, kap = w / RW, N = 72;
+  const sec = [];
+  for (let i = 0; i <= N; i++) {
+    const s = (sEnd * i) / N, b = alpha + kap * s;
+    const y = kap < 1e-6 ? 140 + s * Math.cos(alpha) : 140 + (Math.sin(b) - Math.sin(alpha)) / kap;
+    const z = kap < 1e-6 ? 5 - s * Math.sin(alpha) : 5 + (Math.cos(b) - Math.cos(alpha)) / kap;
+    sec.push({ y, z, b, hw: (W - (W - wEnd) * Math.min(1, s / L) * (1 - w)) / 2 });
+  }
+  const pt = (x, c, off) => [x, sign * (c.y + Math.sin(c.b) * off), c.z + Math.cos(c.b) * off];
+  const sc = (p) => iso(p, P);
+  const f1 = (v) => v.toFixed(1);
+  const faces = [];
+  const addFace = (pts3, fill) => {
+    const c = pts3.reduce((a, q) => [a[0] + q[0] / pts3.length, a[1] + q[1] / pts3.length, a[2] + q[2] / pts3.length], [0, 0, 0]);
+    const d = "M" + pts3.map((q) => sc(q).map(f1).join(" ")).join("L") + "Z";
+    faces.push({ depth: depthOf(c, P), svg: '<path d="' + d + '" style="fill:' + fill + ";stroke:" + fill + ';stroke-width:.7;stroke-linejoin:round"/>' });
+  };
+  const to = T / 2, ti = -T / 2;
+  for (let i = 0; i < N; i++) {
+    const a = sec[i], b = sec[i + 1], m = (a.b + b.b) / 2;
+    const n3 = [0, sign * Math.sin(m), Math.cos(m)];
+    const fo = lfacing(n3);
+    if (fo > 0) addFace([pt(-a.hw, a, to), pt(-b.hw, b, to), pt(b.hw, b, to), pt(a.hw, a, to)], ltone(fo));
+    else addFace([pt(-a.hw, a, ti), pt(-b.hw, b, ti), pt(b.hw, b, ti), pt(a.hw, a, ti)], LSH[LUP]);
+    addFace([pt(a.hw, a, to), pt(b.hw, b, to), pt(b.hw, b, ti), pt(a.hw, a, ti)], LSH[LUP]);
+  }
+  const e = sec[N], te = [0, sign * Math.cos(e.b), -Math.sin(e.b)];
+  if (lfacing(te) > 0) addFace([pt(-e.hw, e, to), pt(e.hw, e, to), pt(e.hw, e, ti), pt(-e.hw, e, ti)], LSH[1 + LUP]);
+  faces.sort((p, q) => p.depth - q.depth);
+  const out = faces.map((f) => f.svg);
+  const edgeL = [], edgeR = [], stitch = [], creases = [];
+  sec.forEach((c, i) => {
+    const n3 = [0, sign * Math.sin(c.b), Math.cos(c.b)];
+    if (lfacing(n3) <= 0) return;
+    edgeL.push(sc(pt(-c.hw, c, to)));
+    edgeR.push(sc(pt(c.hw, c, to)));
+    for (const x of [-c.hw + 8, c.hw - 8]) stitch.push(sc(pt(x, c, to + 0.3)));
+    if (i % 6 === 3) creases.push(pathOf([sc(pt(-c.hw + 18, c, to + 0.3)), sc(pt(c.hw - 18, c, to + 0.3))]));
+  });
+  if (edgeL.length > 1) out.push('<path class="iso-line" data-tone="hi" d="' + pathOf(edgeL) + '"/><path class="iso-line" data-tone="hi" d="' + pathOf(edgeR) + '"/>');
+  out.push(dotsSvg(stitch, { size: 0.9, tone: "hi" }));
+  if (creases.length) out.push('<path class="iso-line" data-tone="lo" data-free="" d="' + creases.join("") + '" style="opacity:.5"/>');
+  return '<g class="strap">' + out.join("") + "</g>";
 }
 function hairPath(theta) {
   const pts = [], N = 140, turns = 11, r0 = 5.8, r1 = 24.8;
