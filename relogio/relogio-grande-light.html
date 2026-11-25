@@ -879,7 +879,7 @@ const still = matchMedia("(prefers-reduced-motion: reduce)");
 const nodes = [...svgRoot.querySelectorAll(".it[data-a]")].map((el) => ({ el, a: el.dataset.a, m: el.dataset.m.split(",").map(Number), rank: Number(el.dataset.rank) }));
 const nodeParent = nodes[0].el.parentNode;
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
-const VB0 = [214.361202394153,367.8371603626162,456.5986192895791,507.49172027007984], VB1 = [0,0,860,1300], VBM = [214.361202394153,312.8556526152979,456.5986192895791,639.1741227470434], STAGE1 = {"bezel":1018,"hands":1018,"dial":1018,"motion":1018};
+const VB0 = [214.361202394153,367.8371603626162,456.5986192895791,507.49172027007984], VB1 = [0,0,860,1300], VBM = [214.361202394153,312.8556526152979,456.5986192895791,639.1741227470434], STAGE1 = {"bezel":1018,"hands":1018,"dial":1018,"motion":1018,"plate":44,"barrel":44,"train":44,"escape":44,"balance":44,"bridges":44,"chrono":44,"bridgePa":44,"bridgeHook":44,"bridgeHeart":44,"cock":44};
 let domOrder = "";
 const buttons = [...document.querySelectorAll("[data-pick]")];
 const gearEls = GEARS.map((g) => ({ ...g, el: svgRoot.querySelector('[data-gear="' + g.id + '"]') }));
