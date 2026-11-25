@@ -1095,7 +1095,7 @@ function draw() {
     const rb = svgRoot.getBoundingClientRect();
     const sc2 = Math.min(rb.width / VB1[2], rb.height / VB1[3]);
     const vbw = Math.abs(iso([SPREAD_DIR[0], SPREAD_DIR[1], 0], P)[0] - iso([0, 0, 0], P)[0]);
-    spScale = Math.max(0.5, Math.min(4, ((rb.width - 600) / 2 - 70) / (sc2 * vbw) / 250));
+    spScale = Math.max(0.5, Math.min(4, ((rb.width - 600) / 2 - 0) / (sc2 * vbw) / 250));
     state.spScale = spScale;
     state.spZk = Math.max(0.5, sc2 / 0.612);
   }
@@ -1337,7 +1337,7 @@ function bpBuild() {
   out.push('<path d="' + grid.join("") + '" style="fill:none;stroke:var(--anatomy-faint);stroke-width:' + (lw * 0.55).toFixed(2) + ';opacity:.45"/>');
   const m = u(16);
   out.push(ln([[vx0 + m, vy0 + m], [vx1 - m, vy0 + m], [vx1 - m, vy1 - m], [vx0 + m, vy1 - m], [vx0 + m, vy0 + m]], "var(--anatomy-mid)", lw, u(1.4), 0));
-  const tw = u(260), th = u(74), bx = vx1 - m - tw - u(6), by = vy1 - m - th - u(6);
+  const tw = u(260), th = u(74), bx = vx1 - m - tw - u(14), by = vy0 + m + u(14);
   const bb = box("back"), bs = box("strapB");
   const blocks = [[bx, by, bx + tw, by + th]];
   if (bb) blocks.push([bb[0] - u(4), bb[3] + u(2), bb[2] + u(4), bb[3] + u(44)]);
