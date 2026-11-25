@@ -138,7 +138,11 @@ html,body{height:100%;overflow:hidden}
 .iso-plate-corners,.iso-legend{display:none!important}
 .tf-parts,.tf-clock,.tf-bar .tf-btn:not([data-toggle]){display:none!important}
 .push{cursor:pointer}
-[data-bp]{pointer-events:none;opacity:0;transition:opacity .5s}
+[data-bp]{pointer-events:none;opacity:0;transition:opacity .4s}
+.bp-ln{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;animation:bpdraw .9s ease-out forwards}
+.bp-tx{opacity:0;animation:bpfade .5s ease-out forwards;letter-spacing:.01em}
+@keyframes bpdraw{to{stroke-dashoffset:0}}
+@keyframes bpfade{to{opacity:1}}
 [data-bp][data-show]{opacity:1}
 [data-blueprint] .tf-info{visibility:hidden}
 .seam{fill:none;stroke:var(--anatomy-top);stroke-width:2.6;stroke-linecap:butt}
@@ -910,7 +914,7 @@ const SUB_T = [0,-56], RES = [-62,0], SUB_L = [62,0], SUB_R = [0,50], MOON = [0,
 const springEl = svgRoot.querySelector("[data-spring]");
 const spring = Object.fromEntries(ASM.map((a) => [a.id, { x: 0, v: 0, target: 0, at: 0 }]));
 const now = new Date();
-const state = { wrapT: 1, wrapB: 1, wrapClock: 0, stage: 0, vb: VB0.slice(), apart: false, sel: null, clock: 0, touring: false, tourT: 0, idle: 0, say: "", tsim: now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds() + now.getMilliseconds() / 1000, offset: 0, slow: false, mid: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(), chrono: { running: false, t: 0 }, press: null, moonP: -1, cal: "", setting: false, reserve: 36, rotor: 0, rotorV: 0, wound: 0.8, crownX: 0, dragging: false };
+const state = { spv: {}, spT0: -1, spClock: 0, wrapT: 1, wrapB: 1, wrapClock: 0, stage: 0, vb: VB0.slice(), apart: false, sel: null, clock: 0, touring: false, tourT: 0, idle: 0, say: "", tsim: now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds() + now.getMilliseconds() / 1000, offset: 0, slow: false, mid: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(), chrono: { running: false, t: 0 }, press: null, moonP: -1, cal: "", setting: false, reserve: 36, rotor: 0, rotorV: 0, wound: 0.8, crownX: 0, dragging: false };
 let frame = 0, last = 0, visible = false;
 const STAGGER = 0.035, STIFF = 64, DRAG = 14.2;
 const AMP = 270, LEVER_AMP = 7.5, BEAT = 8;
@@ -920,12 +924,13 @@ const LIFTS = Object.fromEntries(ASM.map((a) => [a.id, a.lift]));
 function setStage(n) {
   if (state.stage === n) return;
   const opening = n > state.stage;
+  const from = state.stage;
   const together = n === 1 || state.stage === 1 && n === 0;
   state.stage = n;
   state.apart = n > 0;
   const tg = (id) => (n === 2 ? 1 : n === 1 && STAGE1[id] ? STAGE1[id] / LIFTS[id] : 0);
   const seq = (opening ? ORDER : [...ORDER].reverse()).filter((id) => spring[id].target !== tg(id));
-  seq.forEach((id, i) => { spring[id].target = tg(id); spring[id].at = state.clock + (together ? 0 : i * STAGGER) + (opening && (id === "strapT" || id === "strapB") ? 1.7 : 0); spring[id].armed = true; });
+  seq.forEach((id, i) => { spring[id].target = tg(id); spring[id].at = state.clock + (together ? 0 : i * STAGGER) + (opening && (id === "strapT" || id === "strapB") ? 1.7 : 0) + (from === 2 && !opening ? 0.9 : 0); spring[id].armed = true; });
   run();
 }
 const setApart = (on) => setStage(on ? 2 : 0);
@@ -1003,9 +1008,30 @@ function pressPusher(id) {
 function chronoStartStop() { state.chrono.running = !state.chrono.running; pressPusher("start"); chronoBtn.textContent = state.chrono.running ? "Parar cronógrafo" : "Iniciar cronógrafo"; run(); }
 function chronoReset() { if (state.chrono.running) return; state.chrono.t = 0; pressPusher("reset"); run(); }
 function draw() {
+  const near = ORDER.every((id) => !spring[id].armed && Math.abs(spring[id].x - spring[id].target) < 0.02);
+  let spScale = state.spScale || 1;
+  if (state.stage === 2 || SPREAD_IDS.some((id) => (state.spv[id] || 0) > 0)) {
+    const rb = svgRoot.getBoundingClientRect();
+    const sc2 = Math.min(rb.width / VB1[2], rb.height / VB1[3]);
+    const vbw = Math.abs(iso([SPREAD_DIR[0], SPREAD_DIR[1], 0], P)[0] - iso([0, 0, 0], P)[0]);
+    spScale = Math.max(0.5, Math.min(4, ((rb.width - 600) / 2 - 70) / (sc2 * vbw) / 250));
+    state.spScale = spScale;
+    state.spZk = Math.max(0.5, sc2 / 0.612);
+  }
+  const dts = Math.max(0, state.clock - state.spClock);
+  state.spClock = state.clock;
+  const wantSpread = state.stage === 2 && near;
+  if (wantSpread) { if (state.spT0 < 0) state.spT0 = state.clock; } else if (state.stage !== 2) state.spT0 = -1;
+  SPREAD_IDS.forEach((id, i) => {
+    const cur = state.spv[id] || 0;
+    if (wantSpread) state.spv[id] = Math.max(cur, ease(0, 1, (state.clock - state.spT0 - i * 0.07) / 1.5));
+    else if (state.stage !== 2) state.spv[id] = Math.max(0, cur - dts / 0.9);
+  });
   for (const n of nodes) {
     const share = spring[n.a] ? spring[n.a].x : 0;
-    if (share === 0) n.el.removeAttribute("transform"); else n.el.setAttribute("transform", translateAlong(P, [n.m[0] * share, n.m[1] * share, n.m[2] * share]));
+    const sv = (state.spv[n.a] || 0) * (SPREAD[n.a] || 0) * spScale;
+    const sz = (state.spv[n.a] || 0) * (SPREADZ[n.a] || 0) * (state.spZk || 1);
+    if (share === 0 && sv === 0 && sz === 0) n.el.removeAttribute("transform"); else n.el.setAttribute("transform", translateAlong(P, [n.m[0] * share + SPREAD_DIR[0] * sv, n.m[1] * share + SPREAD_DIR[1] * sv, n.m[2] * share + sz]));
     const aim = spring[n.a] ? spring[n.a].target * n.m[2] : 0;
     n.lvl = aim > 60 || aim < -60 ? Math.round(aim / 40) * 40 : 0;
   }
@@ -1066,8 +1092,8 @@ function draw() {
   const moving = ORDER.some((id) => spring[id].x !== spring[id].target || spring[id].armed);
   document.body.toggleAttribute("data-blueprint", state.stage === 2);
   const vbDone = state.vb.every((v, i) => Math.abs(v - VB1[i]) < 2);
-  const near = ORDER.every((id) => !spring[id].armed && Math.abs(spring[id].x - spring[id].target) < 0.02);
-  if (state.stage === 2 && near && vbDone) {
+  const spreadDone = SPREAD_IDS.every((id) => (state.spv[id] || 0) >= 0.995);
+  if (state.stage === 2 && near && vbDone && spreadDone) {
     const rb = svgRoot.getBoundingClientRect();
     const key = Math.round(rb.width) + "x" + Math.round(rb.height);
     if (bpKey !== key) { bpKey = key; bpBuild(); }
@@ -1149,12 +1175,16 @@ function hairPath(theta) {
   for (let i = 0; i <= N; i++) { const t = i / N, a = turns * 2 * Math.PI * t + theta * Math.PI / 180 * (1 - t), r = r0 + (r1 - r0) * t * (1 + 0.012 * Math.sin(theta * Math.PI / 180)); pts.push(iso([BAL[0] + r * Math.cos(a), BAL[1] + r * Math.sin(a), 31.3], P)); }
   return pathOf(pts);
 }
+const SPREAD = {"bezel":-250,"hands":225,"dial":-195,"motion":250,"cock":-245,"bridgeHeart":185,"bridgeHook":-215,"bridgePa":245,"bridges":-170,"balance":250,"chrono":-250,"escape":200,"train":-240,"barrel":235,"plate":-180,"rotor":250,"back":-250,"case":245}, SPREAD_AMP = 1, SPREAD_DIR = [0.9659258262890683,-0.25881904510252074];
+const SPREAD_IDS = Object.keys(SPREAD);
+const SPREADZ = {"bezel":530,"dial":120,"cock":0,"bridgeHook":-490,"bridges":-850,"chrono":-1540,"train":-1870,"plate":-2150,"back":-2330,"hands":530,"motion":160,"bridgeHeart":-160,"bridgePa":-325,"balance":-610,"escape":-1220,"barrel":-1700,"rotor":-2320,"case":-2420};
 const BPDATA = [["bezel","Lunete","Ø 44 mm · anel gravado"],["hands","Ponteiros","horas, minutos, segundos e cronógrafo"],["dial","Mostrador","Ø 40 mm · 60 pontos de minuteria"],["motion","Minuteria","redução 12:1"],["cock","Ponte do balanço","prende o eixo do balanço"],["bridgeHeart","Ponte em coração","assenta sobre a rodagem"],["bridgeHook","Ponte em gancho","cobre o alto do movimento"],["bridgePa","Ponte em pá","cobre a mola principal"],["bridges","Pontes e catraca","rubis e lingueta da mola"],["balance","Balanço","28.800 alt/h · 4 Hz"],["chrono","Cronógrafo","came, martelo e alavancas"],["escape","Escapamento","roda de 15 dentes · 16 rpm"],["train","Rodagem","80/10 · 80/10 · 75/10 · 96/6"],["barrel","Barrilete","reserva de cerca de 40 h"],["plate","Platina","Ø 40 mm · base do movimento"],["rotor","Massa oscilante","enrola a mola do barrilete"],["back","Fundo com vidro","Ø 44 mm · vidro de safira"],["case","Caixa","Ø 44 mm · altura 9 mm"],["crown","Coroa","dá corda e acerta a hora"],["pushS","Pusher superior","inicia e para o cronógrafo"],["pushR","Pusher inferior","zera o cronógrafo"],["pins","Pinos de mola","prendem as pulseiras"],["strapT","Pulseira superior","22 mm × 83 mm · fivela"],["strapB","Pulseira inferior","22 mm × 117 mm · 9 furos"]];
 const bpG = document.createElementNS("http://www.w3.org/2000/svg", "g");
 bpG.setAttribute("data-bp", "");
 svgRoot.appendChild(bpG);
 let bpKey = "";
 function bpBuild() {
+  const NS = "http://www.w3.org/2000/svg";
   const rect = svgRoot.getBoundingClientRect();
   const ctm = svgRoot.getScreenCTM();
   const inv = ctm.inverse();
@@ -1162,8 +1192,42 @@ function bpBuild() {
   const pt = (x, y) => { const p = svgRoot.createSVGPoint(); p.x = x; p.y = y; const q = p.matrixTransform(inv); return [q.x, q.y]; };
   const [vx0, vy0] = pt(rect.left, rect.top), [vx1, vy1] = pt(rect.right, rect.bottom);
   const u = (px) => px / sc;
-  const fN = u(12.5), fS = u(10.5), lw = u(1);
   const f1 = (v) => v.toFixed(1);
+  const HAND = "'Ink Free','Segoe Print','Bradley Hand','Chalkboard SE','Comic Sans MS',cursive";
+  const fN = u(14.5), fS = u(12), lw = u(1.3);
+  let seed = 90210;
+  const rnd = () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const hand = (pts, amp) => {
+    const q = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i];
+      const len = Math.hypot(x1 - x0, y1 - y0) || 1;
+      const n = Math.max(1, Math.round(len / u(28)));
+      const nx = -(y1 - y0) / len, ny = (x1 - x0) / len;
+      for (let k = 1; k <= n; k++) {
+        const t = k / n, j = k === n ? 0 : (rnd() - 0.5) * 2 * amp;
+        q.push([x0 + (x1 - x0) * t + nx * j, y0 + (y1 - y0) * t + ny * j]);
+      }
+    }
+    let d = "M" + f1(q[0][0]) + " " + f1(q[0][1]);
+    for (let i = 1; i < q.length - 1; i++) d += "Q" + f1(q[i][0]) + " " + f1(q[i][1]) + " " + f1((q[i][0] + q[i + 1][0]) / 2) + " " + f1((q[i][1] + q[i + 1][1]) / 2);
+    return d + "L" + f1(q[q.length - 1][0]) + " " + f1(q[q.length - 1][1]);
+  };
+  const ln = (pts, color, w, amp, delay) => '<path class="bp-ln" pathLength="1" d="' + hand(pts, amp) + '" style="stroke:' + color + ";stroke-width:" + w.toFixed(2) + ";animation-delay:" + delay.toFixed(2) + 's"/>';
+  const tx = (x, y, text, size, weight, color, delay, anchor) => {
+    const rot = (rnd() - 0.5) * 1.6;
+    return '<text class="bp-tx" x="' + f1(x) + '" y="' + f1(y) + '" transform="rotate(' + rot.toFixed(2) + " " + f1(x) + " " + f1(y) + ')" text-anchor="' + (anchor || "start") + '" style="font:' + weight + " " + size.toFixed(1) + "px " + HAND + ";fill:" + color + ";animation-delay:" + delay.toFixed(2) + 's">' + text + "</text>";
+  };
+  const measure = (text, size, weight) => {
+    const t = document.createElementNS(NS, "text");
+    t.setAttribute("style", "font:" + weight + " " + size + "px " + HAND);
+    t.textContent = text;
+    bpG.appendChild(t);
+    const w = t.getComputedTextLength();
+    bpG.removeChild(t);
+    return w;
+  };
+  bpG.innerHTML = "";
   const box = (id) => {
     let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
     nodes.filter((n) => n.a === id).forEach((n) => {
@@ -1180,63 +1244,111 @@ function bpBuild() {
   BPDATA.forEach(([id, name, spec], i) => {
     const b = box(id);
     if (!b) return;
-    items.push({ id, name, spec, n: String(i + 1).padStart(2, "0"), b, cx: (b[0] + b[2]) / 2, cy: (b[1] + b[3]) / 2 });
+    const n = String(i + 1).padStart(2, "0");
+    items.push({ id, name, spec, n, b, cx: (b[0] + b[2]) / 2, cy: (b[1] + b[3]) / 2, w: Math.max(measure(n + " " + name, fN, 700), measure(spec, fS, 400)) });
   });
   items.sort((a, b) => a.cy - b.cy);
-  const cols = { L: [], R: [] };
-  items.forEach((it) => {
-    const off = it.cx - mid;
-    const side = Math.abs(off) < u(40) ? (cols.L.length <= cols.R.length ? "L" : "R") : off < 0 ? "L" : "R";
-    it.side = side;
-    cols[side].push(it);
-  });
   const out = [];
-  const grid = [];
   const step = u(48);
+  const grid = [];
   for (let x = vx0 + step; x < vx1; x += step) grid.push("M" + f1(x) + " " + f1(vy0) + "V" + f1(vy1));
   for (let y = vy0 + step; y < vy1; y += step) grid.push("M" + f1(vx0) + " " + f1(y) + "H" + f1(vx1));
-  out.push('<path d="' + grid.join("") + '" style="fill:none;stroke:var(--anatomy-faint);stroke-width:' + (lw * 0.6).toFixed(2) + ';opacity:.55"/>');
-  const m = u(14);
-  out.push('<rect x="' + f1(vx0 + m) + '" y="' + f1(vy0 + m) + '" width="' + f1(vx1 - vx0 - 2 * m) + '" height="' + f1(vy1 - vy0 - 2 * m) + '" style="fill:none;stroke:var(--anatomy-mid);stroke-width:' + lw.toFixed(2) + '"/>');
-  const textW = (it) => Math.max((it.n.length + 1 + it.name.length) * fN * 0.62, it.spec.length * fS * 0.6);
-  const rowH = fN * 1.25 + fS * 1.25 + u(12);
-  const top = vy0 + u(40), bottom = vy1 - u(40);
-  for (const side of ["L", "R"]) {
-    const list = cols[side];
-    const w = Math.max(0, ...list.map(textW));
-    const xText = side === "L" ? vx0 + u(34) : vx1 - u(34) - w;
-    const xEdge = side === "L" ? xText + w + u(8) : xText - u(8);
-    let prev = top - rowH;
-    list.forEach((it) => { it.ly = Math.max(it.cy - fN * 0.4, prev + rowH); prev = it.ly; });
-    let next = bottom + rowH;
-    for (let i = list.length - 1; i >= 0; i--) { list[i].ly = Math.min(list[i].ly, next - rowH); next = list[i].ly; }
-    list.forEach((it) => {
-      const b = it.b;
-      const ax = EDGE[it.id] ? (side === "L" ? b[0] : b[2]) : it.cx;
-      const ay = it.cy;
-      const ty = it.ly + fN;
-      const ex = side === "L" ? xEdge + u(16) : xEdge - u(16);
-      const lineY = ty + u(3);
-      out.push('<path d="M' + f1(ax) + " " + f1(ay) + "L" + f1(ex) + " " + f1(lineY) + "L" + f1(xEdge) + " " + f1(lineY) + "L" + f1(side === "L" ? xText : xText + w) + " " + f1(lineY) + '" style="fill:none;stroke:var(--anatomy-hi);stroke-width:' + lw.toFixed(2) + '"/>');
-      out.push('<circle cx="' + f1(ax) + '" cy="' + f1(ay) + '" r="' + u(2.4).toFixed(2) + '" style="fill:var(--anatomy-top);stroke:none"/>');
-      out.push('<text x="' + f1(xText) + '" y="' + f1(ty) + '" style="font:600 ' + fN.toFixed(1) + 'px var(--anatomy-mono);fill:var(--anatomy-strong)">' + it.n + " " + it.name + "</text>");
-      out.push('<text x="' + f1(xText) + '" y="' + f1(lineY + fS * 1.35) + '" style="font:400 ' + fS.toFixed(1) + 'px var(--anatomy-mono);fill:var(--anatomy-text)">' + it.spec + "</text>");
-    });
-  }
-  const dim = (x0, x1, y, text, yExt) => {
-    const t = u(5);
-    out.push('<path d="M' + f1(x0) + " " + f1(yExt) + "V" + f1(y + t) + "M" + f1(x1) + " " + f1(yExt) + "V" + f1(y + t) + "M" + f1(x0) + " " + f1(y) + "H" + f1(x1) + "M" + f1(x0) + " " + f1(y) + "l" + f1(t) + " " + f1(-t / 2) + "M" + f1(x0) + " " + f1(y) + "l" + f1(t) + " " + f1(t / 2) + "M" + f1(x1) + " " + f1(y) + "l" + f1(-t) + " " + f1(-t / 2) + "M" + f1(x1) + " " + f1(y) + "l" + f1(-t) + " " + f1(t / 2) + '" style="fill:none;stroke:var(--anatomy-hi);stroke-width:' + lw.toFixed(2) + '"/>');
-    out.push('<text x="' + f1((x0 + x1) / 2) + '" y="' + f1(y - u(5)) + '" text-anchor="middle" style="font:600 ' + fS.toFixed(1) + 'px var(--anatomy-mono);fill:var(--anatomy-strong)">' + text + "</text>");
-  };
+  out.push('<path d="' + grid.join("") + '" style="fill:none;stroke:var(--anatomy-faint);stroke-width:' + (lw * 0.55).toFixed(2) + ';opacity:.45"/>');
+  const m = u(16);
+  out.push(ln([[vx0 + m, vy0 + m], [vx1 - m, vy0 + m], [vx1 - m, vy1 - m], [vx0 + m, vy1 - m], [vx0 + m, vy0 + m]], "var(--anatomy-mid)", lw, u(1.4), 0));
+  const tw = u(260), th = u(74), bx = vx1 - m - tw - u(6), by = vy1 - m - th - u(6);
   const bb = box("back"), bs = box("strapB");
-  if (bb) dim(bb[0], bb[2], bb[3] + u(22), "Ø 44 mm", bb[3] + u(2));
-  if (bs) dim(bs[0], bs[2], bs[1] - u(18), "22 mm", bs[1] - u(2));
-  const tw = u(236), th = u(66), tx = vx1 - m - tw, ty0 = vy1 - m - th;
-  out.push('<rect x="' + f1(tx) + '" y="' + f1(ty0) + '" width="' + f1(tw) + '" height="' + f1(th) + '" style="fill:var(--anatomy-card);stroke:var(--anatomy-mid);stroke-width:' + lw.toFixed(2) + '"/>');
-  out.push('<path d="M' + f1(tx) + " " + f1(ty0 + th * 0.42) + "H" + f1(tx + tw) + '" style="fill:none;stroke:var(--anatomy-mid);stroke-width:' + lw.toFixed(2) + '"/>');
-  out.push('<text x="' + f1(tx + u(10)) + '" y="' + f1(ty0 + th * 0.3) + '" style="font:600 ' + fN.toFixed(1) + 'px var(--anatomy-mono);fill:var(--anatomy-strong)">ANATOMY · VISTA EXPLODIDA</text>');
-  out.push('<text x="' + f1(tx + u(10)) + '" y="' + f1(ty0 + th * 0.66) + '" style="font:400 ' + fS.toFixed(1) + 'px var(--anatomy-mono);fill:var(--anatomy-text)">Cronógrafo automático · 28.800 alt/h</text>');
-  out.push('<text x="' + f1(tx + u(10)) + '" y="' + f1(ty0 + th * 0.88) + '" style="font:400 ' + fS.toFixed(1) + 'px var(--anatomy-mono);fill:var(--anatomy-muted)">Medidas em mm · 1 mm = 7,5 un.</text>');
+  const blocks = [[bx, by, bx + tw, by + th]];
+  if (bb) blocks.push([bb[0] - u(4), bb[3] + u(2), bb[2] + u(4), bb[3] + u(44)]);
+  if (bs) blocks.push([bs[0] - u(4), bs[1] - u(44), bs[2] + u(4), bs[1] - u(2)]);
+  const pad = u(6);
+  const hit = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+  const inflate = (b, d) => [b[0] - d, b[1] - d, b[2] + d, b[3] + d];
+  const placed = [];
+  const lh = fN * 1.25 + fS * 1.25 + u(8);
+  const gap = u(26);
+  const free = (r, self) => {
+    if (r[0] < vx0 + m + u(8) || r[2] > vx1 - m - u(8) || r[1] < vy0 + m + u(8) || r[3] > vy1 - m - u(8)) return false;
+    if (blocks.some((q) => hit(r, q))) return false;
+    if (placed.some((q) => hit(r, q))) return false;
+    return !items.some((o) => o !== self && hit(r, inflate(o.b, u(3))));
+  };
+  let order = 0;
+  [...items].sort((p, q) => q.cy - p.cy).forEach((it) => {
+    const b = it.b;
+    const sides = it.cx < mid ? ["L", "R"] : ["R", "L"];
+    let pick = null;
+    for (const gm of [1, 1.8, 2.8]) {
+      for (const dyk of [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7, -8, 8]) {
+        for (const side of sides) {
+          const ty0 = it.cy - fN * 0.8 + dyk * u(24);
+          const x0 = side === "L" ? b[0] - gap * gm - it.w : b[2] + gap * gm;
+          const r = [x0 - pad, ty0 - pad, x0 + it.w + pad, ty0 + lh + pad];
+          if (free(r, it)) { pick = { side, x0, ty0, r }; break; }
+        }
+        if (pick) break;
+      }
+      if (pick) break;
+    }
+    if (!pick) {
+      for (const gm of [1, 1.8, 2.8]) {
+        for (const dxk of [0, -1, 1, -2, 2, -3, 3]) {
+          for (const side of ["U", "D"]) {
+            const x0 = it.cx - it.w / 2 + dxk * u(30);
+            const ty0 = side === "U" ? b[1] - gap * gm - lh : b[3] + gap * gm;
+            const r = [x0 - pad, ty0 - pad, x0 + it.w + pad, ty0 + lh + pad];
+            if (free(r, it)) { pick = { side, x0, ty0, r }; break; }
+          }
+          if (pick) break;
+        }
+        if (pick) break;
+      }
+    }
+    if (!pick) {
+      const side = sides[0];
+      const x0 = side === "L" ? b[0] - gap - it.w : b[2] + gap;
+      const ty0 = it.cy - fN * 0.8;
+      pick = { side, x0, ty0, r: [x0, ty0, x0 + it.w, ty0 + lh] };
+    }
+    placed.push(pick.r);
+    const side = pick.side;
+    const vert = side === "U" || side === "D";
+    const ax = vert ? it.cx : EDGE[it.id] ? (side === "L" ? b[0] : b[2]) : it.cx;
+    const ay = vert && EDGE[it.id] ? (side === "U" ? b[1] : b[3]) : it.cy;
+    const ty = pick.ty0 + fN;
+    const lineY = ty + u(5);
+    const d0 = 0.4 + order * 0.07;
+    order++;
+    if (vert) {
+      const ex = Math.max(pick.x0 + u(12), Math.min(pick.x0 + it.w - u(12), ax));
+      const ey = side === "U" ? pick.ty0 + lh : pick.ty0;
+      out.push(ln([[ax, ay], [ex, ey]], "var(--anatomy-hi)", lw, u(1.1), d0));
+      out.push(ln([[pick.x0, lineY], [pick.x0 + it.w, lineY]], "var(--anatomy-hi)", lw, u(1.1), d0 + 0.1));
+    } else {
+      const xNear = side === "L" ? pick.x0 + it.w : pick.x0;
+      const xFar = side === "L" ? pick.x0 : pick.x0 + it.w;
+      out.push(ln([[ax, ay], [side === "L" ? xNear + u(16) : xNear - u(16), lineY], [xNear, lineY], [xFar, lineY]], "var(--anatomy-hi)", lw, u(1.1), d0));
+    }
+    out.push(ln([[ax - u(3), ay], [ax, ay - u(3)], [ax + u(3), ay], [ax, ay + u(3)], [ax - u(3), ay]], "var(--anatomy-top)", lw * 1.2, u(0.4), d0));
+    out.push(tx(pick.x0, ty, it.n + " " + it.name, fN, 700, "var(--anatomy-strong)", d0 + 0.35));
+    out.push(tx(pick.x0, lineY + fS * 1.3, it.spec, fS, 400, "var(--anatomy-text)", d0 + 0.45));
+  });
+  const dim = (x0, x1, y, text, yExt, delay) => {
+    const t = u(6);
+    out.push(ln([[x0, yExt], [x0, y + t]], "var(--anatomy-hi)", lw, u(0.8), delay));
+    out.push(ln([[x1, yExt], [x1, y + t]], "var(--anatomy-hi)", lw, u(0.8), delay));
+    out.push(ln([[x0, y], [x1, y]], "var(--anatomy-hi)", lw, u(1), delay + 0.1));
+    out.push(ln([[x0 + t, y - t / 2], [x0, y], [x0 + t, y + t / 2]], "var(--anatomy-hi)", lw, u(0.3), delay + 0.2));
+    out.push(ln([[x1 - t, y - t / 2], [x1, y], [x1 - t, y + t / 2]], "var(--anatomy-hi)", lw, u(0.3), delay + 0.2));
+    out.push(tx((x0 + x1) / 2, y - u(6), text, fS, 700, "var(--anatomy-strong)", delay + 0.4, "middle"));
+  };
+  if (bb) dim(bb[0], bb[2], bb[3] + u(24), "Ø 44 mm", bb[3] + u(2), 2.0);
+  if (bs) dim(bs[0], bs[2], bs[1] - u(20), "22 mm", bs[1] - u(2), 2.2);
+  out.push(ln([[bx, by], [bx + tw, by], [bx + tw, by + th], [bx, by + th], [bx, by]], "var(--anatomy-mid)", lw, u(1), 2.3));
+  out.push(ln([[bx, by + th * 0.4], [bx + tw, by + th * 0.4]], "var(--anatomy-mid)", lw, u(0.8), 2.5));
+  out.push(tx(bx + u(10), by + th * 0.28, "ANATOMY · vista explodida", fN, 700, "var(--anatomy-strong)", 2.6));
+  out.push(tx(bx + u(10), by + th * 0.64, "Cronógrafo automático · 28.800 alt/h", fS, 400, "var(--anatomy-text)", 2.7));
+  out.push(tx(bx + u(10), by + th * 0.9, "medidas em mm · 1 mm = 7,5 un.", fS * 0.95, 400, "var(--anatomy-muted)", 2.8));
   bpG.innerHTML = out.join("");
 }
 const TOUR = [...ORDER];
