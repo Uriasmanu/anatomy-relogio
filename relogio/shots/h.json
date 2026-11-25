@@ -1,0 +1,1 @@
+[["wait",400],["eval","(()=>{const out=[];document.querySelectorAll('.it[data-a=\"bezel\"],.it[data-a=\"case\"]').forEach(g=>{const f=g.querySelector('.iso-fill');const b=f?f.getBBox():null;out.push(g.dataset.a+' sub'+g.dataset.sub+' '+(b?[b.x,b.y,b.x+b.width,b.y+b.height].map(v=>v.toFixed(1)).join(','):'-'))});return out.join(' | ')})()"]]

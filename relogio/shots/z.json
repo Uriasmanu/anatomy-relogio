@@ -1,0 +1,1 @@
+[["wait",1500],["shot","shots/a0.png",null,2,[250,100,560,560]],["click","svg"],["wait",4500],["shot","shots/a1.png",null,2,[250,400,560,500]]]

@@ -1,0 +1,3 @@
+[["wait",600],
+["eval","(()=>{return 1})()"],
+["shot","shots/g.png"]]

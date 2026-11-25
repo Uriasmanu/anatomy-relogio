@@ -1,0 +1,1 @@
+[["wait", 1500], ["eval", "(()=>{const o={};document.querySelectorAll('.it[data-a]').forEach(e=>{const r=e.getBoundingClientRect();const a=e.dataset.a;(o[a]=o[a]||[]).push([Math.round(r.left),Math.round(r.right),Math.round(r.top),Math.round(r.bottom)])});return JSON.stringify({plate:o.plate,case:o.case&&o.case.slice(0,2),back:o.back,rotor:o.rotor})})()"]]

@@ -1,0 +1,1 @@
+[["wait",500],["shot","shots/k-a.png"],["click",".iso-stage"],["wait",4000],["shot","shots/k-b.png"],["click",".iso-stage"],["wait",3000],["shot","shots/k-c.png"]]

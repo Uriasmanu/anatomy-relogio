@@ -1,0 +1,1 @@
+[["wait",500],["click",".iso-stage"],["sheet","shots/audit/s1-light.png",700,8,null,0.35,null,4],["wait",3000],["click",".iso-stage"],["sheet","shots/audit/s2-light.png",900,12,null,0.35,null,4],["wait",5000],["click",".iso-stage"],["sheet","shots/audit/s3-light.png",900,12,null,0.35,null,4]]
