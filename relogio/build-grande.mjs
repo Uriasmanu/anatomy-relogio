@@ -92,13 +92,13 @@ const STAGE1 = Object.fromEntries(["bezel", "hands", "dial", "motion"].map((id) 
 const WELL_UP = 44;
 for (const id of ["plate", "barrel", "train", "escape", "balance", "bridges", "chrono", "bridgePa", "bridgeHook", "bridgeHeart", "cock"]) STAGE1[id] = WELL_UP;
 const VBM = (() => {
-  const pts = k.boxCorners({ x: -225, y: -330, w: 450, d: 670, r: 0 }, -130, 62 + 440 * ZK).map((q) => k.iso(q, P));
+  const pts = k.boxCorners({ x: -225, y: -330, w: 450, d: 670, r: 0 }, -130, 62 + 700 * ZK + 24).map((q) => k.iso(q, P));
   const xs = pts.map((q) => q[0]);
   const ys = pts.map((q) => q[1]);
   const x0 = Math.min(...xs) - 30;
   const y0 = Math.min(...ys) - 30;
   const hh = Math.max(...ys) + 30 - y0;
-  return [x0, y0 + hh * 0.12, Math.max(...xs) + 30 - x0, hh];
+  return [x0, y0, Math.max(...xs) + 30 - x0, hh];
 })();
 const VB0 = (() => {
   const pts = k.boxCorners({ x: -225, y: -330, w: 450, d: 670, r: 0 }, -130, 62).map((q) => k.iso(q, P));
@@ -1260,6 +1260,12 @@ const PANEL_CSS = `
 .tf-part:hover,.tf-part[data-on]{background:var(--anatomy-face);color:var(--anatomy-strong)}
 .tf-part[data-on] i{color:var(--anatomy-strong)}
 .iso-stage{touch-action:pan-y;cursor:pointer;user-select:none}
+html,body{height:100%;overflow:hidden}
+.iso-page{margin:0!important;width:100vw!important;max-width:none!important;height:100vh;box-sizing:border-box;padding:10px 10px 82px!important;display:flex}
+.iso-figure{margin:0!important;flex:1;min-width:0;min-height:0;display:flex}
+.iso-plate{flex:1;min-width:0;min-height:0;display:flex;box-sizing:border-box;padding:6px!important}
+.iso-stage{flex:1;min-width:0;min-height:0;width:auto!important;height:auto!important}
+.iso-stage svg,.iso-stage .iso-svg{width:100%!important;height:100%!important;margin:0!important;max-width:none!important}
 .iso-fill{fill-rule:evenodd}
 .iso-plate-corners,.iso-legend{display:none!important}
 .tf-parts,.tf-clock,.tf-bar .tf-btn:not([data-toggle]){display:none!important}
