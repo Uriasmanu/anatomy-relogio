@@ -1376,7 +1376,32 @@ function bpBuild() {
     out.push(tx((x0 + x1) / 2, y - u(6), text, fS, 700, "var(--anatomy-strong)", delay + 0.4, "middle"));
   };
   if (bb) dim(bb[0], bb[2], bb[3] + u(24), "Ø 44 mm", bb[3] + u(2), 2.0);
-  if (bs) dim(bs[0], bs[2], bs[1] - u(20), "22 mm", bs[1] - u(2), 2.2);
+  if (bs) {
+    const o0 = iso([0, 0, 0], P), o1 = iso([166, 0, 0], P);
+    const wv = [o1[0] - o0[0], o1[1] - o0[1]];
+    let A = [(bs[0] + bs[2]) / 2 - wv[0] / 2, bs[1]], best = 1e9;
+    nodes.filter((n) => n.a === "strapB").forEach((n) => [n.el, ...n.el.querySelectorAll("path,polygon,polyline")].forEach((p) => {
+      const m = p.getScreenCTM(), nums = (p.getAttribute("d") || p.getAttribute("points") || "").match(/-?[0-9]+[.]?[0-9]*/g) || [];
+      if (!m) return;
+      for (let i = 0; i + 1 < nums.length; i += 2) {
+        const q = svgRoot.createSVGPoint(); q.x = +nums[i]; q.y = +nums[i + 1];
+        const g = q.matrixTransform(m), c = pt(g.x, g.y);
+        const hy = wv[1] > 0 ? c[1] : c[1] - wv[1];
+        if (hy < best) { best = hy; A = wv[1] > 0 ? c : [c[0] - wv[0], c[1] - wv[1]]; }
+      }
+    }));
+    const Bp = [A[0] + wv[0], A[1] + wv[1]], up = u(26), t = u(6);
+    const nrm = [-wv[1], wv[0]], nl = Math.hypot(nrm[0], nrm[1]) || 1;
+    const sg = nrm[1] > 0 ? -1 : 1, nv = [sg * nrm[0] / nl * up, sg * nrm[1] / nl * up];
+    const A2 = [A[0] + nv[0], A[1] + nv[1]], B2 = [Bp[0] + nv[0], Bp[1] + nv[1]];
+    const ux = wv[0] / Math.hypot(wv[0], wv[1]), uy = wv[1] / Math.hypot(wv[0], wv[1]);
+    out.push(ln([[A[0] + nv[0] * 0.12, A[1] + nv[1] * 0.12], [A2[0] + nv[0] * 0.15, A2[1] + nv[1] * 0.15]], "var(--anatomy-hi)", lw, u(0.8), 2.2));
+    out.push(ln([[Bp[0] + nv[0] * 0.12, Bp[1] + nv[1] * 0.12], [B2[0] + nv[0] * 0.15, B2[1] + nv[1] * 0.15]], "var(--anatomy-hi)", lw, u(0.8), 2.2));
+    out.push(ln([A2, B2], "var(--anatomy-hi)", lw, u(1), 2.3));
+    out.push(ln([[A2[0] + (ux - uy / 2) * t, A2[1] + (uy + ux / 2) * t], A2, [A2[0] + (ux + uy / 2) * t, A2[1] + (uy - ux / 2) * t]], "var(--anatomy-hi)", lw, u(0.3), 2.4));
+    out.push(ln([[B2[0] - (ux - uy / 2) * t, B2[1] - (uy + ux / 2) * t], B2, [B2[0] - (ux + uy / 2) * t, B2[1] - (uy - ux / 2) * t]], "var(--anatomy-hi)", lw, u(0.3), 2.4));
+    out.push(tx((A2[0] + B2[0]) / 2, (A2[1] + B2[1]) / 2 - u(7), "22 mm", fS, 700, "var(--anatomy-strong)", 2.6, "middle"));
+  }
   out.push(ln([[bx, by], [bx + tw, by], [bx + tw, by + th], [bx, by + th], [bx, by]], "var(--anatomy-mid)", lw, u(1), 2.3));
   out.push(ln([[bx, by + th * 0.4], [bx + tw, by + th * 0.4]], "var(--anatomy-mid)", lw, u(0.8), 2.5));
   out.push(tx(bx + u(10), by + th * 0.28, "ANATOMY · vista explodida", fN, 700, "var(--anatomy-strong)", 2.6));
