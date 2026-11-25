@@ -719,10 +719,17 @@ function caseMiddle() {
   front.push(L(k.sideArc(0, 0, 166, 6, P, 60) + k.sideArc(0, 0, 166, 26, P, 60), { tone: "faint" }));
   put("case", Z_CASE1, [0, 100, Z_CASE1], front.join(""), KEY_FRONT);
   const lug = (sx, sy) => {
-    const pts = [[sx * 84, sy * 146], [sx * 112, sy * 138], [sx * 108, sy * 190], [sx * 96, sy * 214], [sx * 86, sy * 206]];
-    const svg = [poly(pts, -6, 16, { tone: "mid", crease: "lo" }, 0.8)];
-    svg.push(dotsAt([[sx * 94, sy * 196, 10]], { tone: "hi", size: 1.2 }));
-    svg.push(L([-1, 0, 1].map((i) => k.onTop(capsule([sx * (92 + i * 6), sy * 156], [sx * (94 + i * 5), sy * 190], 2.4), 10, P, true)).join(""), { tone: "lo" }));
+    const xi = 84;
+    const xo = 108;
+    const arc = [];
+    for (let i = 0; i <= 6; i++) {
+      const x = xi + ((xo - xi) * i) / 6;
+      arc.push([sx * x, sy * Math.sqrt(166 * 166 - x * x)]);
+    }
+    const pts = [...arc, [sx * xo, sy * 190], [sx * 96, sy * 214], [sx * xi, sy * 206]];
+    const svg = [poly(pts, -6, 22, { tone: "mid", crease: "lo" }, 0.8, false)];
+    svg.push(dotsAt([[sx * 94, sy * 196, 16]], { tone: "hi", size: 1.2 }));
+    svg.push(L([-1, 0, 1].map((i) => k.onTop(capsule([sx * (92 + i * 5), sy * 150], [sx * (94 + i * 4), sy * 190], 2.4), 16, P, true)).join(""), { tone: "lo" }));
     return svg.join("");
   };
   for (const sx of [-1, 1]) {
@@ -766,7 +773,7 @@ function strap() {
       for (let i = 1; i < 12; i++) pts.push([r * Math.cos((Math.PI * i) / 12), yc + sign * r * Math.sin((Math.PI * i) / 12)]);
       pts.push([-r, yc]);
     } else pts.push([wEnd / 2, y1], [-wEnd / 2, y1]);
-    const svg = [poly(pts, z, t, { tone: "lo", crease: "lo" }, 1.4, false)];
+    const svg = [poly(pts, z, t, { tone: "mid", crease: "lo" }, 1.4, false)];
     const cell = [];
     const rows = Math.floor((len - (round ? 80 : 34)) / 40);
     for (let r = 0; r < rows; r++) {
@@ -809,7 +816,9 @@ function loops() {
   const N = 28;
   const view = [Math.cos(rad(75)) * Math.cos(rad(55)), Math.sin(rad(75)) * Math.cos(rad(55)), Math.sin(rad(55)) * 0.8];
   const facing = (n) => n[0] * view[0] + n[1] * view[1] + n[2] * view[2];
-  const tone = (f) => (f > 0.8 ? "var(--anatomy-top)" : f > 0.62 ? "var(--anatomy-shade-3)" : f > 0.42 ? "var(--anatomy-shade-2)" : f > 0.2 ? "var(--anatomy-shade-1)" : "var(--anatomy-shade-0)");
+  const SH = ["var(--anatomy-shade-0)", "var(--anatomy-shade-1)", "var(--anatomy-shade-2)", "var(--anatomy-shade-3)", "var(--anatomy-top)"];
+  const up = theme === "dark" ? 1 : 0;
+  const tone = (f) => SH[Math.min(4, (f > 0.8 ? 4 : f > 0.62 ? 3 : f > 0.42 ? 2 : f > 0.2 ? 1 : 0) + up)];
   const f1 = (v) => v.toFixed(1);
   for (const sign of [-1, 1]) {
     const w3 = (x, th, r) => [x, sign * r * Math.sin(th), ZC + r * Math.cos(th)];
@@ -828,12 +837,12 @@ function loops() {
       const ro = RW + T / 2;
       const ri = RW - T / 2;
       if (fo > 0) addFace([w3(-W / 2, ta, ro), w3(-W / 2, tb, ro), w3(W / 2, tb, ro), w3(W / 2, ta, ro)], nOut, tone(fo));
-      else addFace([w3(-W / 2, ta, ri), w3(-W / 2, tb, ri), w3(W / 2, tb, ri), w3(W / 2, ta, ri)], nOut, "var(--anatomy-shade-0)");
-      addFace([w3(W / 2, ta, ro), w3(W / 2, tb, ro), w3(W / 2, tb, ri), w3(W / 2, ta, ri)], [1, 0, 0], "var(--anatomy-shade-0)");
+      else addFace([w3(-W / 2, ta, ri), w3(-W / 2, tb, ri), w3(W / 2, tb, ri), w3(W / 2, ta, ri)], nOut, SH[up]);
+      addFace([w3(W / 2, ta, ro), w3(W / 2, tb, ro), w3(W / 2, tb, ri), w3(W / 2, ta, ri)], [1, 0, 0], SH[up]);
     }
     const te = th1;
     const tn = [0, sign * Math.cos(te), -Math.sin(te)];
-    if (facing(tn) > 0) addFace([w3(-W / 2, te, RW + T / 2), w3(W / 2, te, RW + T / 2), w3(W / 2, te, RW - T / 2), w3(-W / 2, te, RW - T / 2)], tn, "var(--anatomy-shade-1)");
+    if (facing(tn) > 0) addFace([w3(-W / 2, te, RW + T / 2), w3(W / 2, te, RW + T / 2), w3(W / 2, te, RW - T / 2), w3(-W / 2, te, RW - T / 2)], tn, SH[1 + up]);
     faces.sort((a2, b2) => a2.depth - b2.depth);
     const out = faces.map((f) => f.svg);
     const creases = [];
