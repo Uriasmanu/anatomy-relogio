@@ -714,6 +714,16 @@ function caseMiddle() {
   const h = Z_CASE1 - Z_CASE0;
   const wall = S(ringSolid(Z_CASE0, h, 150, 166, 120), { tone: "mid", crease: "lo" });
   put("case", Z_CASE1, [0, -100, Z_CASE1], wall, KEY_BACK);
+  const aIn = FACE + Math.PI / 2;
+  const inTop = [];
+  const inBot = [];
+  for (let i = 0; i <= 60; i++) {
+    const p = polar(0, 0, 150, aIn + (Math.PI * i) / 60);
+    inTop.push(at([p[0], p[1], Z_CASE1]));
+    inBot.push(at([p[0], p[1], Z_CASE0]));
+  }
+  const innerWall = `<path style="fill:var(--anatomy-shade-1);stroke:var(--anatomy-shade-1);stroke-width:.6" d="${k.pathOf([...inTop, ...inBot.slice().reverse()], true)}"/>` + L(k.pathOf(inBot), { tone: "faint" });
+  put("case", Z_CASE1, [0, -100, Z_CASE1], innerWall, KEY_BACK + 1);
   const opening = k.ring(0, 0, 150, Z_CASE1, P, 96);
   const front = [`<clipPath id="nearclip"><path clip-rule="evenodd" d="M-3000 -3000H6000V6000H-3000Z${opening}Z"/></clipPath><g clip-path="url(#nearclip)">${wall}</g>`];
   front.push(L(k.sideArc(0, 0, 166, 6, P, 60) + k.sideArc(0, 0, 166, 26, P, 60), { tone: "faint" }));
@@ -1017,10 +1027,11 @@ const setApart = (on) => setStage(on ? 2 : 0);
 function select(id) {
   state.sel = id;
   if (!id) svgRoot.removeAttribute("data-focus"); else svgRoot.setAttribute("data-focus", "");
-  nodes.forEach((n) => (n.a === id ? n.el.setAttribute("data-on", "") : n.el.removeAttribute("data-on")));
+  const grp = { strapT: ["strapT", "loopT"], strapB: ["strapB", "loopB"] }[id] || [id];
+  nodes.forEach((n) => (grp.includes(n.a) ? n.el.setAttribute("data-on", "") : n.el.removeAttribute("data-on")));
   buttons.forEach((b) => b.toggleAttribute("data-on", b.dataset.pick === id));
   const a = ASM.find((x) => x.id === id);
-  info.textContent = a ? a.does : "Passe o mouse sobre uma peça ou escolha um conjunto abaixo. O balanço oscila a 4 Hz e a hora mostrada é a real.";
+  info.innerHTML = a ? "<strong>" + a.name + "</strong>" + (a.does ? " — " + a.does : "") : "Clique em uma peça para ver o nome dela.";
   stage.setAttribute("aria-valuetext", a ? a.name : "nenhum conjunto selecionado");
   run();
 }
@@ -1205,11 +1216,21 @@ stage.addEventListener("pointermove", (event) => {
 const endDrag = () => { state.dragging = false; dragLast = null; };
 stage.addEventListener("pointerup", endDrag);
 stage.addEventListener("pointercancel", endDrag);
-stage.addEventListener("click", () => { take(); setStage((state.stage + 1) % 3); });
+function pickAt(event) {
+  for (const el of document.elementsFromPoint(event.clientX, event.clientY)) {
+    if (!stage.contains(el) || el.classList.contains("iso-halo")) continue;
+    const g = el.closest(".it[data-a]");
+    if (!g || (g.style.opacity !== "" && parseFloat(g.style.opacity) < 0.3)) continue;
+    return g.dataset.a === "loopT" ? "strapT" : g.dataset.a === "loopB" ? "strapB" : g.dataset.a;
+  }
+  return null;
+}
+stage.addEventListener("click", (event) => { take(); const id = pickAt(event); select(id && id !== state.sel ? id : null); });
 stage.addEventListener("keydown", (event) => {
   const ids = ASM.map((a) => a.id);
   const at = state.sel ? ids.indexOf(state.sel) : -1;
-  if (event.key === " " || event.key === "Enter") { event.preventDefault(); take(); setStage((state.stage + 1) % 3); }
+  if (event.key === " " || event.key === "Enter") { event.preventDefault(); take(); setApart(!state.apart); }
+  else if (event.key === "Escape") { take(); select(null); }
   else if (event.key === "Home") { take(); setApart(false); }
   else if (event.key === "End") { take(); setApart(true); }
 });
@@ -1224,7 +1245,10 @@ const PANEL_CSS = `
 .tf-btn:hover,.tf-btn[data-on]{border-color:var(--anatomy-hi);background:var(--anatomy-face)}
 .tf-btn:focus-visible,.iso-stage:focus-visible,.tf-part:focus-visible{outline:1px solid var(--anatomy-hi);outline-offset:3px}
 .tf-clock{margin-left:auto;font:500 13px var(--anatomy-mono);color:var(--anatomy-text);white-space:pre}
-.tf-info{flex:1 1 100%;margin:4px 0 0;color:var(--anatomy-text);font-size:13px;line-height:1.55;min-height:3.1em}
+.tf-info{flex:1 1 0;margin:0;color:var(--anatomy-text);font-size:13px;line-height:1.5;min-width:0}
+.tf-info strong{color:var(--anatomy-strong)}
+.tf-bar{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);width:min(720px,calc(100vw - 24px));box-sizing:border-box;margin:0;padding:10px 12px;flex-wrap:nowrap;align-items:flex-start;background:var(--anatomy-card);border:1px solid var(--anatomy-faint);z-index:10}
+.tf-bar .tf-btn{flex:none}
 .tf-parts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1px;margin-top:10px;background:var(--anatomy-faint);border:1px solid var(--anatomy-faint)}
 .tf-part{display:flex;gap:10px;align-items:baseline;text-align:left;font:13px/1.35 ui-sans-serif,system-ui,sans-serif;color:var(--anatomy-text);background:var(--anatomy-card);border:0;padding:10px 12px;cursor:pointer}
 .tf-part i{font:normal 11px var(--anatomy-mono);color:var(--anatomy-muted)}
@@ -1233,7 +1257,7 @@ const PANEL_CSS = `
 .iso-stage{touch-action:pan-y;cursor:pointer;user-select:none}
 .iso-fill{fill-rule:evenodd}
 .iso-plate-corners,.iso-legend{display:none!important}
-.tf-bar,.tf-parts{display:none!important}
+.tf-parts,.tf-clock,.tf-bar .tf-btn:not([data-toggle]){display:none!important}
 .push{cursor:pointer}
 .seam{fill:none;stroke:var(--anatomy-top);stroke-width:2.6;stroke-linecap:butt}
 .stars circle{fill:var(--anatomy-paper)!important;opacity:.9!important}
@@ -1259,7 +1283,7 @@ const PANEL_CSS = `
 const fig = k.plateHtml({
   fig: "Fig 1",
   title: "Relógio de alta complicação",
-  hint: "Pushers: cronógrafo · botão: desmontar",
+  hint: "Clique em uma peça para ver o nome · botão: desmontar",
   readout: "28.800 alt/h",
   keys: [
     { mark: "lit", label: "Conjunto selecionado" },
