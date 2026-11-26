@@ -13,12 +13,20 @@ Grupo de **Peças** por função: parte ativa, contenção e isolação, passage
 _Avoid_: Conjunto, módulo, categoria
 
 **Estágio**:
-Um dos três estados da figura: montado, desmontado, e desmontado em prancha.
+Um dos quatro estados da figura: montado, desmontado, **Prancha** e **Folha**.
 _Avoid_: Modo, etapa, fase
 
 **Prancha**:
 O terceiro **Estágio**: as **Peças** espalhadas com **Balões**, cotas, vistas ortogonais e carimbo, em estilo de projeto técnico.
 _Avoid_: Blueprint, planta
+
+**Folha**:
+O quarto **Estágio**: o transformador inteiro em **Corte** no centro, cercado de **Quadros** numerados de explicação ligados às **Peças**.
+_Avoid_: Apostila, infográfico, folha explicativa
+
+**Quadro**:
+Bloco numerado de texto da **Folha**, com título, tópicos, fórmulas ou tabela, às vezes ligado por um traço fino às **Peças** de que trata.
+_Avoid_: Card, caixa, painel
 
 **Balão**:
 Marca numerada ligada por um traço fino a uma **Peça** na **Prancha**; apontar para ela mostra o nome e a função da **Peça**.

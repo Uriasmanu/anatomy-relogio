@@ -73,6 +73,53 @@ Uma linha por Peça, agrupada por Sistema: número, nome, função em uma linha 
 5. Captura de cada estágio conferida a olho, nos dois temas e em largura de celular.
 6. Nada é commitado; alterações ficam no diretório para revisão.
 
+## Folha
+
+Quarto estágio, inspirado na folha didática `transformador/images.jpg`: um desenho só no centro, cercado de Quadros numerados de explicação. Vocabulário: **Folha**, **Quadro**.
+
+### Ordem dos estágios
+
+Montado → desmontado → Prancha → Folha → montado. Da Prancha para a Folha, as peças voltam ao lugar montado e os Quadros aparecem em seguida. A Prancha continua como está, com vistas ortogonais e carimbo.
+
+### Desenho
+
+- Página horizontal do tamanho da Prancha.
+- Centro: o transformador montado em Corte (tampa e radiadores do lado direito transparentes, paredes próximas fora).
+- Parada, como desenho impresso: ventiladores sem girar, sem cores de temperatura.
+- Carimbo pequeno no canto. Vistas ortogonais não aparecem na Folha.
+
+### Quadros
+
+Texto dentro do SVG, letra técnica atual, organização da referência: título numerado e sublinhado, tópicos, fórmula em caixa, tabela pequena. Fórmulas em texto com símbolos Unicode, sem biblioteca. Valores nominais de `model.mjs`; só o Quadro 10 acompanha carga e tap atuais.
+
+| Nº | Quadro | Posição | Ligado a |
+|---|---|---|---|
+| 1 | Rede de alta tensão (entrada 69 kV) | esquerda | buchas AT |
+| 2 | Para que serve | direita | — |
+| 3 | Dados nominais | esquerda | — |
+| 4 | Saída de baixa tensão (13,8 kV) | direita | buchas BT |
+| 5 | Sistema trifásico (equações das fases) | esquerda | — |
+| 6 | Teoria: relação de espiras, potência, perdas, rendimento | baixo | bobinas |
+| 7 | Correntes AT e BT | direita | ligações das bobinas |
+| 8 | Refrigeração: ONAN/ONAF, topo do óleo, ponto quente | direita | radiadores |
+| 9 | Proteções: Buchholz, termômetro, respirador, conservador | direita | conservador e Buchholz |
+| 10 | Exemplo numérico (ao vivo) | esquerda | — |
+| 11 | Resumo das tensões (tabela) | baixo | — |
+| 12 | Normas aplicáveis: ABNT NBR 5356, IEC 60076 | baixo | — |
+
+### Interação
+
+- Passar o mouse num Quadro destaca as peças ligadas; passar numa peça destaca o Quadro dela.
+- Celular: a Folha rola na horizontal, como a Prancha.
+
+### Critério de pronto
+
+1. O ciclo dos quatro estágios funciona nos dois temas.
+2. Os 12 Quadros aparecem sem se sobrepor ao desenho nem entre si; os traços terminam nas peças certas.
+3. O Quadro 10 muda com a carga e o tap.
+4. `lines.mjs` em 0 na Folha, nos dois temas.
+5. Nada é commitado.
+
 ## Fenômenos
 
 Mostrar o que acontece por dentro em operação: fluxo magnético, corrente, circulação do óleo, temperaturas, dilatação do óleo e gás. Vocabulário no glossário (**Fluxo magnético**, **Corrente**, **Circulação do óleo**, **Topo do óleo**, **Ponto quente**, **Sobrecarga**).
