@@ -1,4 +1,5 @@
 import { D, HV, LV, hvAxis, CONS, RAD, RAD_R_X, RAD_L_X, CAB } from "./parts.mjs";
+import { HV_TURRET, hvPorcelain, LV_TURRET, lvPorcelain } from "./draw/terminais.mjs";
 
 const { TX0, TX1, TY0, TY1, Z_FLOOR, Z_BASE, Z_WALL, Z_LID, OIL_Z, CORE_X, CORE_Y, WALL } = D;
 const f = (n) => Math.round(n * 10) / 10;
@@ -65,10 +66,13 @@ function bushing(view, part, bh, bz, ah, az, sheds = true) {
   const L = [];
   const R = [];
   const push = (s, r) => { L.push(at(S(s), r)); R.push(at(S(s), -r)); };
-  push(0, 24); push(74, 24); push(74, 17); push(82, 17);
-  if (sheds) for (let i = 0; i < 15; i++) { const s = 82 + i * 9.2; push(s + 0.6, 17.2); push(s + 3.2, 17.2); push(s + 4.4, 11.5); }
-  push(220, 8); push(234, 3.4); push(246, 3.4);
+  for (const [s, r] of [...HV_TURRET, ...hvPorcelain()]) push(s, r);
   view.poly(part, [...L, ...R.reverse()]);
+}
+
+function lvOutline(v, h, z) {
+  const prof = [...LV_TURRET, ...lvPorcelain()];
+  v.poly("buchaBT", [...prof.map(([s, r]) => [h - r, z + s]), ...prof.reverse().map(([s, r]) => [h + r, z + s])]);
 }
 
 function frontal() {
@@ -93,7 +97,7 @@ function frontal() {
   v.line("suportes", [[-35, Z_LID], [-35, 355]]);
   v.line("suportes", [[140, Z_LID], [140, 355]]);
   v.rect("respirador", 120, CONS.z - 72, 140, CONS.z - 8);
-  LV.forEach(([x]) => v.rect("buchaBT", x - 5.6, Z_LID, x + 5.6, 373));
+  LV.forEach(([x]) => lvOutline(v, x, Z_LID));
   HV.forEach(({ base, phi }, i) => {
     const a = hvAxis(phi);
     bushing(v, ["buchaA", "buchaB", "buchaC"][i], base[0], Z_LID, a[0], a[2]);
@@ -128,7 +132,7 @@ function lateral() {
   v.line("tubo", [[-202, 358], [-142, 268]]);
   v.line("suportes", [[-144, Z_LID], [-196, 355]]);
   v.rect("respirador", CONS.y - 32, CONS.z - 72, CONS.y - 12, CONS.z - 8);
-  LV.forEach(([, y]) => v.rect("buchaBT", y - 5.6, Z_LID, y + 5.6, 373));
+  LV.forEach(([, y]) => lvOutline(v, y, Z_LID));
   HV.forEach(({ base, phi }, i) => {
     const a = hvAxis(phi);
     bushing(v, ["buchaA", "buchaB", "buchaC"][i], base[1], Z_LID, a[1], a[2]);

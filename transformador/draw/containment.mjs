@@ -4,21 +4,32 @@ import { perimeterDots } from "./ctx.mjs";
 const { WALL, Z_BASE, Z_FLOOR, Z_WALL, Z_LID, TX0, TX1, TY0, TY1, OIL_Z } = D;
 
 export function drawBase(c) {
-  const { k, G, P, S, L, put, slab, seg, dotsAt, frameX } = c;
-  const skirt = { x: TX0 - 12, y: TY0 - 12, w: TX1 - TX0 + 24, d: TY1 - TY0 + 24, r: 6 };
-  put(2, "base", [46, 60, Z_BASE], S(slab(skirt, Z_BASE, 7, 3, 0.6), { tone: "lo" }) + dotsAt(perimeterDots(skirt, Z_BASE + 7, 4.5, 16), { tone: "hi" }), -390);
-  const ring = (plan) => S(slab(plan, 0, Z_BASE, 2, 0.5), { tone: "lo" });
-  put(2, "base", [46, -152, 20], ring({ x: -62, y: -158, w: 217, d: 14, r: 1 }), -300);
-  put(2, "base", [-60, 60, 20], ring({ x: -62, y: -144, w: 14, d: 412, r: 1 }), -300);
-  const ribs = [];
-  for (let x = -50; x <= 150; x += 25) ribs.push(S(slab({ x: x - 2.5, y: 282, w: 5, d: 8, r: 0.4 }, 2, Z_BASE - 6, 1, 0.2), { tone: "lo", crease: "lo" }));
-  put(4, "base", [46, 275, 20], [ring({ x: -62, y: 268, w: 217, d: 14, r: 1 }), ribs.join("")].join(""), 20);
-  const gussets = [];
-  for (let y = -128; y <= 250; y += 30) gussets.push(S(slab({ x: 155, y: y - 3, w: 8, d: 6, r: 0.4 }, 2, Z_BASE - 6, 1, 0.2), { tone: "lo", crease: "lo" }));
-  put(4, "base", [148, 60, 20], ring({ x: 141, y: -144, w: 14, d: 412, r: 1 }) + gussets.join(""), 10);
-  for (const [x, y] of [[-58, -154], [-58, 276], [152, -154], [152, 276]]) {
-    put(y > 0 ? 4 : 2, "base", [x, y, 20], S(slab({ x: x - 5, y: y - 5, w: 10, d: 10, r: 1.5 }, 0, 12, 3, 0.3), { tone: "lo" }), 30);
-  }
+  const { G, P, S, put, slab, dotsAt } = c;
+  const OUT = 12;
+  const H = 7;
+  const ring = (plan) => S(slab(plan, 0, Z_BASE, 2, 0.4), { tone: "lo" });
+  const gusset = (o, a, u, x0) => S(G.prismOf(G.frameOf(o, a, u, [0, 0, 1]), [[0, 0], [OUT - 1, 0], [0, -24]], x0, x0 + 2.4, P), { tone: "lo", crease: "lo" });
+  const pairs = (from, to, step) => {
+    const out = [];
+    for (let t = from; t <= to; t += step) out.push(t - 7, t + 5);
+    return out;
+  };
+  put(2, "base", [46, TY0 + 7, 20], ring({ x: TX0, y: TY0, w: TX1 - TX0, d: 14, r: 0.5 }), -300);
+  put(2, "base", [TX0 + 7, 60, 20], ring({ x: TX0, y: TY0, w: 14, d: TY1 - TY0, r: 0.5 }), -300);
+  put(2, "base", [46, 60, Z_BASE], S(slab({ x: TX0 - OUT, y: TY0 - OUT, w: TX1 - TX0 + 2 * OUT, d: OUT, r: 0.5 }, Z_BASE, H, 1, 0.3), { tone: "lo" }) + S(slab({ x: TX0 - OUT, y: TY0, w: OUT, d: TY1 - TY0, r: 0.5 }, Z_BASE, H, 1, 0.3), { tone: "lo" }), -290);
+  const front = [ring({ x: TX0, y: TY1 - 14, w: TX1 - TX0, d: 14, r: 0.5 })];
+  for (const x of pairs(-34, 136, 34)) front.push(gusset([0, TY1, Z_BASE], [1, 0, 0], [0, 1, 0], x));
+  put(4, "base", [46, TY1 - 7, 20], front.join(""), 20);
+  const right = [ring({ x: TX1 - 14, y: TY0, w: 14, d: TY1 - TY0, r: 0.5 })];
+  for (const y of pairs(-120, 250, 46)) right.push(gusset([TX1, 0, Z_BASE], [0, 1, 0], [1, 0, 0], y));
+  put(4, "base", [TX1 - 7, 60, 20], right.join(""), 10);
+  const bolts = (pts) => dotsAt(pts, { tone: "hi" });
+  const fx = [];
+  for (let x = TX0 - OUT + 5; x <= TX1 + OUT - 4; x += 9) fx.push([x, TY1 + OUT / 2, Z_BASE + H]);
+  put(4, "base", [46, TY1 + OUT / 2, Z_BASE + H / 2], S(slab({ x: TX0 - OUT, y: TY1, w: TX1 - TX0 + 2 * OUT, d: OUT, r: 0.5 }, Z_BASE, H, 1, 0.3), { tone: "lo" }) + bolts(fx), 30);
+  const ry = [];
+  for (let y = TY0 - OUT + 5; y < TY1; y += 9) ry.push([TX1 + OUT / 2, y, Z_BASE + H]);
+  put(4, "base", [TX1 + OUT / 2, 60, Z_BASE + H / 2], S(slab({ x: TX1, y: TY0 - OUT, w: OUT, d: TY1 - TY0 + OUT, r: 0.5 }, Z_BASE, H, 1, 0.3), { tone: "lo" }) + bolts(ry), 25);
 }
 
 export function drawCuba(c) {
