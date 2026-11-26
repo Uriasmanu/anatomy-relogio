@@ -1,1 +1,0 @@
-[["wait",800],["eval","__tf.setStage(3)"],["wait",3500],["shot","../.t/folha.png",".iso-plate",1],["eval","document.querySelector('[data-readout]').textContent"],["lines"]]

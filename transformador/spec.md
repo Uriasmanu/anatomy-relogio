@@ -168,6 +168,8 @@ Só no estágio montado e no corte. Desmontado e prancha ficam estáticos.
 
 ## Notas da implementação
 
+- Folha: o desenho é ampliado 1,32× só nesse estágio para ocupar o centro. Como a Folha usa o Corte, o banco de radiadores da direita fica quase transparente; o Quadro 8 destaca os radiadores, mas o destaque aparece mais no banco da esquerda.
+
 - Retiradas a pedido: as linhas tracejadas animadas (corrente, fluxo magnético, circulação do óleo, respiração) e as bolhas de gás. Ficam as cores de temperatura no óleo, nas bobinas e no termômetro, o visor de nível do conservador, os ventiladores girando e as leituras do painel; a falha (gás, alarme, desligamento, rearme) segue só no modelo e no painel.
 
 - A lista de materiais foi retirada da página a pedido. Os Balões continuam numerados; apontar ou clicar num Balão ou numa Peça mostra número, nome, função, dado nominal e quantidade na linha de informação. Na Prancha, as vistas ortogonais e o carimbo ocupam a largura toda abaixo do desenho.

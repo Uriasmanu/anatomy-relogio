@@ -243,7 +243,7 @@ function draw() {
   const closed = PARTS.every((p) => spring[p.id].x === 0 && !spring[p.id].armed && spread[p.id] === 0);
   const folhaOn = state.stage === 3 && closed;
   folhaEl.style.opacity = folhaOn ? "1" : "0";
-  folhaEl.style.pointerEvents = folhaOn ? "" : "none";
+  folhaEl.style.pointerEvents = folhaOn ? "auto" : "none";
   const vb = state.vb;
   svgRoot.setAttribute("viewBox", vb.map((v) => v.toFixed(2)).join(" "));
   const tk = (vb[2] / svgW).toFixed(2);
