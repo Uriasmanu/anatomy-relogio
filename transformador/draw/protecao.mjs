@@ -5,41 +5,34 @@ export const OTI = { x: 130, y: TY1 + 8, z: 196, r: 7 };
 const OTI_R = OTI.r;
 
 export function drawConservador(c) {
-  const { k, G, P, S, L, put, slab, at, dotsAt, frameX } = c;
+  const { G, P, S, L, put, slab, dotsAt, frameX } = c;
   const F = frameX(CONS.x0, CONS.y, CONS.z);
   const r = CONS.r;
   const L0 = CONS.len;
-  const profile = [[0, r - 7, 1], [2.5, r - 3.4, 1], [6, r - 0.8, 1], [10, r, 1], [L0 - 10, r, 1], [L0 - 6, r - 0.8, 1], [L0 - 2.5, r - 3.4, 1], [L0, r - 7, 1]];
-  const seams = [48, 96, 144].map((s) => G.arcOf(F, s, r, P)).join("");
-  const body = [S(G.solidOf(profile, F, P), { tone: "hi", inner: L(seams, { tone: "faint" }) })];
+  const seams = [64, 128].map((s) => G.arcOf(F, s, r, P, { trim: 0 })).join("");
+  const body = [S(G.solidOf([[0, r - 2], [2, r], [L0 - 4, r], [L0 - 4, r + 2], [L0, r + 2]], F, P), { tone: "hi", inner: L(seams, { tone: "faint" }) })];
   const Fe = frameX(CONS.x0 + L0, CONS.y, CONS.z);
-  body.push(S(G.disc(-0.4, 0.6, 12, frameX(CONS.x0 + L0, CONS.y, CONS.z + 4), P), { tone: "mid" }));
-  const Fg = frameX(CONS.x0 + L0 + 0.6, CONS.y, CONS.z + 4);
-  body.push(L(G.circleOf(Fg, 0, 10, P) + G.circleOf(Fg, 0, 8.2, P), { tone: "lo" }));
-  const ticks = [];
-  for (let i = 0; i <= 8; i++) {
-    const a = ((-120 + 30 * i) * Math.PI) / 180;
-    const pt = (rr) => G.pointOf(Fg, 0, rr, Math.PI / 2 - a);
-    ticks.push(k.pathOf([at(pt(8.2 - (i % 4 === 0 ? 3 : 1.8))), at(pt(8.2))]));
+  const end = [CONS.x0 + L0, CONS.y, CONS.z];
+  body.push(dotsAt(Array.from({ length: 16 }, (_, i) => G.pointOf(Fe, 0, r - 2, (i / 16) * Math.PI * 2)), { tone: "hi" }));
+  const vert = (dy, z0, z1) => c.seg([end[0], CONS.y + dy, CONS.z + z0], [end[0], CONS.y + dy, CONS.z + z1]);
+  for (const dy of [-r * 0.55, r * 0.55]) {
+    body.push(S(slab({ x: end[0], y: CONS.y + dy - 1.6, w: 4, d: 3.2, r: 0.4 }, CONS.z - 10, 20, 1, 0.1), { tone: "mid", crease: "none" }));
+    body.push(L(vert(dy, -10, 10), { tone: "lo", free: true }));
   }
-  body.push(L(ticks.join(""), { tone: "mid" }));
-  body.push(L(k.pathOf([at(G.pointOf(Fg, 0, 0, 0)), at(G.pointOf(Fg, 0, 6, Math.PI / 2 - ((-120 + 30 * 5.2) * Math.PI) / 180))]), { tone: "lit", free: "end" }));
-  body.push(dotsAt(Array.from({ length: 14 }, (_, i) => G.pointOf(Fe, 0, r - 4.5, (i / 14) * Math.PI * 2)), { tone: "mid" }));
-  const Ff = frameX(CONS.x0 + L0 - 12, CONS.y, CONS.z);
-  body.push(S(G.ringBand(0, 3.4, r - 1, r + 3.4, Ff, P), { tone: "mid", crease: "lo" }));
-  body.push(dotsAt(Array.from({ length: 22 }, (_, i) => G.pointOf(Ff, 3.4, r + 1.4, (i / 22) * Math.PI * 2)).filter((p) => G.dot3(G.sub3(p, [CONS.x0 + L0, CONS.y, CONS.z]), c.V) > -6), { tone: "hi" }));
+  body.push(S(G.disc(0, 3, 5, frameX(end[0], CONS.y, CONS.z - r * 0.4), P), { tone: "lo", crease: "lo" }));
   put(7, "conservador", [CONS.x0 + L0 - 20, CONS.y, CONS.z], body.join(""), 0);
-  for (const x of [-12, 118]) {
-    const leg = (sy) => [[x, CONS.y + sy * (r + 2.5), CONS.z - r + 2], [x, CONS.y + sy * (r + 2.5), CONS.z + r + 14]];
-    const far = leg(-1);
-    const near = leg(1);
-    put(7, "conservador", [x, CONS.y - r, CONS.z], c.pipe(far, 2), -1);
-    put(7, "conservador", [x, CONS.y + r, CONS.z + r], c.pipe([far[1], near[1], near[0]], 2), 2);
-  }
   for (const x of [-12, 118]) {
     const strap = S(slab({ x: x - 7, y: CONS.y - r - 3, w: 14, d: 2 * r + 6, r: 4 }, CONS.z - r - 4, 6, 4, 0.2), { tone: "lo" });
     put(7, "conservador", [x, CONS.y, CONS.z - r], strap, 1);
   }
+  const loop = (x, toY) => {
+    const top = CONS.z + r + 14;
+    const pts = [[x, CONS.y, CONS.z + r - 1], [x, CONS.y, top], [x, toY, top], [x, toY, Z_LID]];
+    const clamps = [0.25, 0.6].map((t) => S(c.cyl(x, toY, 3.6, top - (top - Z_LID) * t, 2.4, 14), { tone: "lo", crease: "none" }));
+    return c.pipe(pts, 2) + S(c.cyl(x, CONS.y, 3.8, CONS.z + r - 1, 3, 14), { tone: "lo" }) + S(c.cyl(x, toY, 4.4, Z_LID, 2.4, 14), { tone: "lo" }) + clamps.join("");
+  };
+  put(7, "conservador", [-12, TY0 + 4, 340], loop(-12, TY0 + 4), 3);
+  put(7, "conservador", [118, TY0 + 4, 340], loop(118, TY0 + 4), 3);
 }
 
 export function drawSuportes(c) {
@@ -58,42 +51,42 @@ export function drawSuportes(c) {
   });
 }
 
-const PIPE_FROM = [-20, CONS.y + 6, CONS.z - CONS.r - 2];
-const PIPE_TO = [-20, TY0 + 8, Z_LID + 6];
+export const GAS = { x: 43, z: 347, y0: CONS.y, y1: 185, relay: -138 };
 
 export function drawTubo(c) {
-  const { G, P, S, put } = c;
-  const pd = G.sub3(PIPE_TO, PIPE_FROM);
-  const plen = G.len3(pd);
-  const FP = G.frameAlong(PIPE_FROM, G.unit3(pd));
-  const pipe = [S(G.solidOf([[0, 5.2], [plen, 5.2]], FP, P), { tone: "mid", crease: "none" })];
-  pipe.push(S(G.solidOf([[0, 8], [3, 8]], FP, P), { tone: "lo" }));
-  pipe.push(S(G.solidOf([[plen - 3, 8], [plen, 8]], FP, P), { tone: "lo" }));
-  put(7, "tubo", [-20, (PIPE_FROM[1] + PIPE_TO[1]) / 2, (PIPE_FROM[2] + PIPE_TO[2]) / 2], pipe.join(""), 3);
+  const { S, put, cyl } = c;
+  const { x, z, y0, y1 } = GAS;
+  const pts = [[x, y0, CONS.z - CONS.r + 1], [x, y0, z], [x, y1, z], [x, y1, Z_LID]];
+  const out = [c.pipe(pts, 5.2), S(cyl(x, y1, 9, Z_LID, 3, 20), { tone: "lo" }), S(cyl(x, y0, 8, CONS.z - CONS.r - 2, 3, 20), { tone: "lo" })];
+  put(7, "tubo", [x, (y0 + y1) / 2, z], out.join(""), 3);
 }
 
 export function drawBuchholz(c) {
-  const { G, P, S, L, put } = c;
-  const pd = G.sub3(PIPE_TO, PIPE_FROM);
-  const plen = G.len3(pd);
-  const FP = G.frameAlong(PIPE_FROM, G.unit3(pd));
-  const out = [S(G.solidOf([[plen * 0.42, 5.2], [plen * 0.42, 11.5], [plen * 0.62, 11.5], [plen * 0.62, 5.2]], FP, P), { tone: "hi", crease: "lo", inner: L(G.arcOf(FP, plen * 0.52, 11.5, P), { tone: "faint" }) })];
-  const mid = G.add3(PIPE_FROM, G.mul3(G.unit3(pd), plen * 0.52));
-  const top = G.add3(mid, [0, 0, 10]);
-  out.push(S(G.solidOf([[0, 2.6], [7, 2.6]], G.frameAlong(top, [0, 0, 1]), P), { tone: "mid", crease: "none" }));
-  out.push(S(G.disc(7, 9, 4.4, G.frameAlong(top, [0, 0, 1]), P), { tone: "lo" }));
-  put(7, "buchholz", mid, out.join(""), 3.1);
+  const { G, P, S, L, put, slab, dotsAt } = c;
+  const { x, z, relay } = GAS;
+  const F = G.frameAlong([x, relay - 12, z], [0, 1, 0]);
+  const out = [];
+  for (const s of [0, 21]) {
+    out.push(S(G.disc(s, s + 3, 12, F, P), { tone: "lo", crease: "lo" }));
+    out.push(dotsAt(Array.from({ length: 8 }, (_, i) => G.pointOf(F, s + 3, 10, (i / 8) * Math.PI * 2 + 0.4)).filter((p) => G.dot3(G.sub3(p, [x, relay, z]), c.V) > -4), { tone: "hi" }));
+  }
+  out.push(S(G.solidOf([[3, 9.5], [21, 9.5]], F, P), { tone: "hi", crease: "lo", inner: L(G.arcOf(F, 12, 9.5, P), { tone: "faint" }) }));
+  out.push(S(slab({ x: x - 6, y: relay - 7, w: 12, d: 14, r: 1 }, z + 8, 9, 2, 0.3), { tone: "mid", crease: "lo" }));
+  out.push(S(G.disc(0, 4, 3.2, G.frameAlong([x + 6, relay, z + 12], [1, 0, 0]), P), { tone: "lo" }));
+  put(7, "buchholz", [x, relay, z + 4], out.join(""), 3.1);
 }
 
 export function drawRespirador(c) {
   const { k, G, P, S, L, put, cyl } = c;
-  const bx = 130;
-  const by = CONS.y - CONS.r - 22;
-  const out = [S(G.solidOf([[0, 4.2], [28, 4.2]], G.frameAlong([bx, CONS.y - CONS.r + 4, CONS.z - 2], [0, -1, 0]), P), { tone: "mid", crease: "none" })];
-  out.push(S(cyl(bx, by, 10, CONS.z - 66, 56, 24), { tone: "hi", inner: L(k.sideArc(bx, by, 10, CONS.z - 52, P, 18) + k.sideArc(bx, by, 10, CONS.z - 28, P, 18), { tone: "faint" }) }));
-  out.push(S(cyl(bx, by, 12, CONS.z - 72, 7, 24), { tone: "mid" }));
-  out.push(S(cyl(bx, by, 6, CONS.z - 66 + 56, 6, 16), { tone: "mid", crease: "none" }));
-  put(7, "respirador", [bx, by, CONS.z - 30], out.join(""), 0.5);
+  const bx = CONS.x0 + CONS.len + 20;
+  const by = CONS.y;
+  const top = CONS.z + CONS.r + 12;
+  const out = [c.pipe([[CONS.x0 + CONS.len - 10, by, CONS.z + CONS.r - 1], [CONS.x0 + CONS.len - 10, by, top], [bx, by, top], [bx, by, CONS.z + 26]], 2)];
+  out.push(S(cyl(bx, by, 7, CONS.z + 20, 6, 18), { tone: "mid", crease: "lo" }));
+  out.push(S(cyl(bx, by, 9, CONS.z - 26, 46, 24), { tone: "hi", inner: L(k.sideArc(bx, by, 9, CONS.z - 12, P, 18) + k.sideArc(bx, by, 9, CONS.z + 4, P, 18), { tone: "faint" }) }));
+  out.push(S(cyl(bx, by, 10.5, CONS.z - 32, 6, 24), { tone: "mid" }));
+  out.push(S(cyl(bx, by, 4, CONS.z - 40, 8, 14), { tone: "lo", crease: "none" }));
+  put(7, "respirador", [bx, by, CONS.z], out.join(""), 0.5);
 }
 
 export function drawTermometro(c) {

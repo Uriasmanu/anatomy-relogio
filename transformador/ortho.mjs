@@ -92,11 +92,14 @@ function frontal() {
   v.circ("dreno", 126, 62, 9);
   v.rect("corrimao", -52, Z_LID, 152, Z_LID + 42, "line");
   v.line("corrimao", [[-52, Z_LID + 38], [152, Z_LID + 38]]);
-  v.line("tubo", [[-20, 358], [-20, 268]]);
+  v.line("tubo", [[43, 360], [43, 347]]);
+  v.circ("tubo", 43, 347, 5.2);
+  v.line("tubo", [[43, 347], [43, 262]]);
+  v.rect("buchholz", 31, 335, 55, 359);
   v.rect("conservador", CONS.x0, CONS.z - CONS.r, CONS.x0 + CONS.len, CONS.z + CONS.r);
   v.line("suportes", [[-35, Z_LID], [-35, 355]]);
   v.line("suportes", [[140, Z_LID], [140, 355]]);
-  v.rect("respirador", 120, CONS.z - 72, 140, CONS.z - 8);
+  v.rect("respirador", 157, CONS.z - 40, 175, CONS.z + 26);
   LV.forEach(([x]) => lvOutline(v, x, Z_LID));
   HV.forEach(({ base, phi }, i) => {
     const a = hvAxis(phi);
@@ -129,9 +132,10 @@ function lateral() {
   v.line("corrimao", [[-140, Z_LID + 38], [262, Z_LID + 38]]);
   v.circ("conservador", CONS.y, CONS.z, CONS.r);
   v.circ("conservador", CONS.y, CONS.z, 12, "line");
-  v.line("tubo", [[-202, 358], [-142, 268]]);
+  v.line("tubo", [[CONS.y, 360], [CONS.y, 347], [185, 347], [185, 262]], "line");
+  v.rect("buchholz", -150, 335, -126, 359);
   v.line("suportes", [[-144, Z_LID], [-196, 355]]);
-  v.rect("respirador", CONS.y - 32, CONS.z - 72, CONS.y - 12, CONS.z - 8);
+  v.rect("respirador", CONS.y - 9, CONS.z - 40, CONS.y + 9, CONS.z + 26);
   LV.forEach(([, y]) => lvOutline(v, y, Z_LID));
   HV.forEach(({ base, phi }, i) => {
     const a = hvAxis(phi);
@@ -153,8 +157,9 @@ function plan() {
   v.rect("armario", CAB.x, CAB.y, CAB.x + CAB.w, CAB.y + CAB.d);
   v.rect("escada", -42, TY1 + 6, -14, TY1 + 10);
   v.rect("conservador", CONS.x0, CONS.y - CONS.r, CONS.x0 + CONS.len, CONS.y + CONS.r);
-  v.rect("respirador", 120, CONS.y - 44, 140, CONS.y - 24);
-  v.line("tubo", [[-20, -202], [-20, -142]]);
+  v.rect("respirador", 157, CONS.y - 9, 175, CONS.y + 9);
+  v.line("tubo", [[43, CONS.y], [43, 185]]);
+  v.rect("buchholz", 31, -150, 55, -126);
   v.line("suportes", [[-35, -144], [-35, -196]]);
   v.line("suportes", [[140, -144], [140, -196]]);
   v.circ("tampoes", 0, -90, 24, "line");

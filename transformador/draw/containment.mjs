@@ -160,13 +160,6 @@ export function drawOlhais(c) {
 
 export function drawCorrimao(c) {
   const { G, S, put, slab, frameY } = c;
-  const POLE_Z = Z_LID + 80;
-  const poleYs = [-110, -10, 90, 202];
-  for (let i = 0; i < poleYs.length - 1; i++) {
-    const F = frameY(43, poleYs[i], POLE_Z);
-    const len = poleYs[i + 1] - poleYs[i];
-    put(7, "corrimao", [43, (poleYs[i] + poleYs[i + 1]) / 2, POLE_Z], S(G.solidOf([[0, 3.2], [len, 3.2]], F, c.P), { tone: "mid", crease: "none" }), 4);
-  }
   for (const y of [-110, -40, 30, 100, 160, 202]) {
     const post = S(slab({ x: 41.2, y: y - 1.8, w: 3.6, d: 3.6, r: 0.4 }, Z_LID, 80, 1, 0.1), { tone: "mid", crease: "none" });
     const plate = S(slab({ x: 36, y: y - 5, w: 14, d: 10, r: 1.5 }, Z_LID, 2.4, 2, 0), { tone: "lo" });

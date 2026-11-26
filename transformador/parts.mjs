@@ -81,7 +81,7 @@ export const PARTS = [
   P("tampa", "contencao", "Tampa", "Fecha a cuba com juntas aparafusadas. Sustenta as buchas e o conservador e é retirada para içar a parte ativa.", "Chapa de aço", 1, M.tampa, [50, 60, 262], ["y", -154, 278, 158, 262]),
   P("tampoes", "contencao", "Tampas de inspeção", "Tampões aparafusados sobre aberturas na tampa, por onde uma pessoa chega ao interior sem retirar a tampa.", "Aberturas redondas", 2, M.tampa, [0, -90, 268], null),
   P("olhais", "contencao", "Olhais de içamento", "Orelhas de aço soldadas nos cantos da tampa. É nelas que o guindaste prende os cabos para levantá-la.", "4 pontos de içamento", 4, M.tampa, [-48, -144, 272], null),
-  P("corrimao", "contencao", "Corrimão e suportes", "Estrutura de tubos sobre a tampa que protege quem sobe para inspecionar as buchas. Liga-se à escada por um dos lados.", "Tubo de aço", 1, M.tampa, [43, 60, 342], null),
+  P("corrimao", "contencao", "Corrimão e suportes", "Guarda-corpos de tubo nas bordas da tampa e postes centrais que também sustentam o tubo do conservador.", "Tubo de aço", 1, M.tampa, [43, 60, 342], null),
   P("oleo", "contencao", "Óleo isolante", "Óleo mineral que enche a cuba: isola as bobinas, leva o calor até as paredes e aos radiadores e dilata no conservador.", `Elevação máxima ${fmt(RATED.rise, 0)} K`, 1, M.none, [46, 130, 140], null),
   P("dreno", "contencao", "Válvula de drenagem", "Válvula na base da cuba, por onde o óleo é retirado para manutenção ou coletado para análise.", "Registro de gaveta", 1, M.none, [100, 272, 70], null),
 
@@ -97,9 +97,9 @@ export const PARTS = [
 
   P("conservador", "protecao", "Conservador de óleo", "Reservatório de expansão: recebe o óleo quando ele esquenta e dilata. Tem um indicador de nível numa das tampas.", "Tanque cilíndrico", 1, M.cons, [30, CONS.y, CONS.z + CONS.r], ["x", -45, 147, -208, 424]),
   P("suportes", "protecao", "Suportes do conservador", "Escoras de aço inclinadas que apoiam o conservador sobre a tampa, longe das buchas.", "2 suportes", 2, M.cons, [-35, -170, 330], null),
-  P("buchholz", "protecao", "Relé Buchholz", "Fica no tubo entre a cuba e o conservador. Se uma falha interna gera gás ou o óleo corre depressa, ele dispara o alarme e desliga o transformador.", "Alarme e desligamento", 1, M.cons, [-20, -150, 310], null),
-  P("tubo", "protecao", "Tubo de ligação", "Tubo inclinado que leva o óleo entre a cuba e o conservador. O relé Buchholz é instalado no meio dele.", "Tubo de aço", 1, M.cons, [-20, -150, 310], null),
-  P("respirador", "protecao", "Respirador de sílica-gel", "Filtro por onde o conservador respira. A sílica-gel retém a umidade do ar para ela não chegar ao óleo.", "Sílica-gel", 1, M.cons, [130, -245, 380], null),
+  P("buchholz", "protecao", "Relé Buchholz", "Fica no tubo entre a cuba e o conservador. Se uma falha interna gera gás ou o óleo corre depressa, ele dispara o alarme e desliga o transformador.", "Alarme e desligamento", 1, M.cons, [43, -138, 361], null),
+  P("tubo", "protecao", "Tubo de ligação", "Tubo que desce do conservador, corre sobre a tampa apoiado em postes e desce até a cuba. O relé Buchholz fica no trecho horizontal.", "Tubo de aço", 1, M.cons, [43, 40, 352], null),
+  P("respirador", "protecao", "Respirador de sílica-gel", "Filtro por onde o conservador respira. A sílica-gel retém a umidade do ar para ela não chegar ao óleo.", "Sílica-gel", 1, M.cons, [167, -208, 392], null),
   P("termometro", "protecao", "Termômetro do óleo", "Mostra a temperatura do óleo no topo da cuba e liga os ventiladores quando ela passa do limite.", `Alarme ${RATED.onAt} °C`, 1, M.none, [80, 272, 170], null),
   P("armario", "protecao", "Armário de comando", "Armário com o controle dos ventiladores, os bornes dos sensores e as proteções. Tem porta com trinco e aberturas de ventilação.", "Ventiladores · alarmes", 1, M.arm, [67, 292, 140], ["z", 87, 191, 19, 292]),
   P("eletrodutos", "protecao", "Eletrodutos", "Tubos de aço que levam os cabos de comando da cuba até o armário, protegendo-os do tempo.", "Tubo de aço", 2, M.none, [34, 280, 20], null),
