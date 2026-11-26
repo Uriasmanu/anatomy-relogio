@@ -109,18 +109,8 @@ export const PAGE_CSS = `
 @media (max-width:560px){.iso-stage{margin:0 -4px}.tf-sys{margin-left:0}}
 
 
-.fx-line{fill:none;stroke-width:1.5px;stroke-linecap:round;opacity:0;transition:opacity .5s;pointer-events:none}
 .fx-glass{fill:var(--anatomy-face);stroke:var(--anatomy-hi);stroke-width:.8px}
 .fx-level{fill:var(--t-top, var(--anatomy-mid));stroke:none}
-[data-live] .fx-line{opacity:1}
-.fx-oil{stroke-dasharray:3 6}
-.fx-hot{stroke:var(--t-top, var(--anatomy-hi))}
-.fx-cold{stroke:var(--t-bot, var(--anatomy-mid))}
-.fx-cur{stroke:var(--anatomy-lit);stroke-width:1.2px;stroke-dasharray:2 9}
-.fx-cur-lv{stroke-width:2.4px;stroke-dasharray:4 7}
-.fx-flux{stroke:var(--anatomy-lit);stroke-width:2px;stroke-dasharray:5 5}
-.fx-breath{stroke:var(--anatomy-lit);stroke-width:1.6px;stroke-dasharray:2 4}
-[data-tripped] .fx-cur,[data-tripped] .fx-flux{opacity:0!important}
 [data-live] .it[data-p="at"] .iso-fill,[data-live] .it[data-p="bt"] .iso-fill{fill:color-mix(in srgb,var(--t-hot, transparent) 32%,var(--anatomy-paper))}
 [data-live] .it[data-p="oleo"] .iso-line[data-tone="lo"]{stroke:color-mix(in srgb,var(--t-top, var(--anatomy-lo)) 70%,var(--anatomy-paper))}
 [data-live] [data-oti-needle]{stroke:var(--t-top)}

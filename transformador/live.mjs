@@ -67,13 +67,6 @@ const fanEls = qa("[data-fan]");
 const needleEl = svgRoot.querySelector("[data-oti-needle]");
 const tapArm = svgRoot.querySelector("[data-tap-arm]");
 const tapDots = qa("[data-tap-dot]");
-const fxOil = qa(".fx-oil:not(.fx-rev)");
-const fxOilRev = qa(".fx-oil.fx-rev");
-const fxCur = qa(".fx-cur");
-const fxAb = qa('[data-flux="ab"]');
-const fxBc = qa('[data-flux="bc"]');
-const fxBreath = qa("[data-breath]");
-const setAll = (els, prop, v) => { for (const el of els) el.style[prop] = v; };
 let heatKey = "";
 let svgW = 1000, lastTk = "";
 const measure = () => { svgW = svgRoot.getBoundingClientRect().width || 1000; };
@@ -91,7 +84,7 @@ const state = {
   stage: 0, sel: null, hov: null, sysFocus: null, off: new Set(), cut: false, clock: 0, spT0: -1, spDir: 0,
   vb: VBS[0].slice(), tap: 4, tapShown: 4, load: 0.6, oil: steadyOil(0.6, false), fans: false, fanRate: 0, fanAngle: 0,
   touring: !still.matches, idle: 0, say: "", tourT: 0,
-  on: true, tripped: false, gas: 0, gasRate: 0, alarm: false, hot: 0, level: 0, breath: 0, simH: 0, oilOff: 0, curOff: 0, fAb: 0, fBc: 0, th: 0, brOff: 0,
+  on: true, tripped: false, gas: 0, gasRate: 0, alarm: false, hot: 0, level: 0, breath: 0, simH: 0,
 };
 let frame = 0, last = 0, visible = false;
 const STAGGER = 0.3, STIFF = 64, DRAG = 14.2;
@@ -204,14 +197,6 @@ function step(dt) {
   state.breath += (dl - state.breath) * (1 - Math.exp(-dt / 0.6));
   state.level = lvl;
   state.simH += dt * HOURS_PER_SECOND;
-  const k0 = calm ? 0 : dt;
-  const warm = clamp((state.oil - RATED.ambient) / RATED.rise, 0, 1.4);
-  state.oilOff += k0 * (5 + 22 * warm) * (state.fans ? 1.6 : 1);
-  state.curOff += k0 * 60 * eff;
-  state.th += k0 * Math.PI * 2 * 0.55;
-  state.fAb += k0 * 26 * Math.sin(state.th);
-  state.fBc += k0 * 26 * Math.sin(state.th - (2 * Math.PI) / 3);
-  state.brOff += k0 * 120 * state.breath;
   const want = state.fans ? 16 : 0;
   state.fanRate = calm ? want : state.fanRate + (want - state.fanRate) * (1 - Math.exp(-dt / 0.9));
   state.fanAngle += state.fanRate * dt;
@@ -272,22 +257,6 @@ function draw() {
     heatKey = key;
     const top = heat(state.oil), cold = heat(bot), hot = heat(state.hot);
     for (const el of heatEls) { el.style.setProperty("--t-top", top); el.style.setProperty("--t-bot", cold); el.style.setProperty("--t-hot", hot); }
-  }
-  if (liveOn) {
-    setAll(fxOil, "strokeDashoffset", (-state.oilOff).toFixed(1));
-    setAll(fxOilRev, "strokeDashoffset", state.oilOff.toFixed(1));
-    setAll(fxCur, "strokeDashoffset", (-state.curOff).toFixed(1));
-    const B = state.on ? fluxDensity(state.tap) / RATED.B : 0;
-    setAll(fxAb, "strokeDashoffset", state.fAb.toFixed(1));
-    setAll(fxBc, "strokeDashoffset", state.fBc.toFixed(1));
-    setAll(fxAb, "opacity", (B * (0.15 + 0.85 * Math.abs(Math.sin(state.th)))).toFixed(2));
-    setAll(fxBc, "opacity", (B * (0.15 + 0.85 * Math.abs(Math.sin(state.th - (2 * Math.PI) / 3)))).toFixed(2));
-    setAll(fxBreath, "strokeDashoffset", state.brOff.toFixed(1));
-    setAll(fxBreath, "opacity", clamp(Math.abs(state.breath) * 6, 0, 1).toFixed(2));
-  } else {
-    setAll(fxAb, "opacity", "");
-    setAll(fxBc, "opacity", "");
-    setAll(fxBreath, "opacity", "");
   }
   if (levelEl) {
     const zl = LEVEL.z0 + (LEVEL.z1 - LEVEL.z0) * state.level / 100;
