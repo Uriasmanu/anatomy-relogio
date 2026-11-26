@@ -53,6 +53,6 @@ export function drawVentiladores(c) {
     const Fg = frameZ(cx, y, FAN_Z + 28);
     out.push(L(G.circleOf(Fg, 0, FAN_R - 1, P) + G.circleOf(Fg, 0, 15, P) + G.circleOf(Fg, 0, 6, P) + G.spokesOf(Fg, 0, 6, FAN_R - 1, 8, P), { tone: "lo" }));
     const left = i >= 4;
-    put(left ? 1 : 5, "ventiladores", [cx, y, 160], out.join(""), -0.5, { inst: i ? "x" + i : "0", move: left ? partById.radB.move : null });
+    put(left ? 1 : 5, "ventiladores", [cx, y - FAN_R - 8, 160], out.join(""), -0.5, { inst: i ? "x" + i : "0", move: left ? partById.radB.move : null });
   });
 }
