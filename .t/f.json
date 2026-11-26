@@ -1,1 +1,0 @@
-[["wait",900],["lines"],["eval","__tf.setCut(true)"],["wait",700],["lines"],["eval","__tf.state.touring=false; __tf.state.load=1.5; 'x'"],["wait",9000],["eval","JSON.stringify({alarm:__tf.state.alarm,on:__tf.state.on,buch:document.querySelector('[data-cell=buch]').textContent})"]]
