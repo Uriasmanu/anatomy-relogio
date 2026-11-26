@@ -73,6 +73,52 @@ Uma linha por Peça, agrupada por Sistema: número, nome, função em uma linha 
 5. Captura de cada estágio conferida a olho, nos dois temas e em largura de celular.
 6. Nada é commitado; alterações ficam no diretório para revisão.
 
+## Fenômenos
+
+Mostrar o que acontece por dentro em operação: fluxo magnético, corrente, circulação do óleo, temperaturas, dilatação do óleo e gás. Vocabulário no glossário (**Fluxo magnético**, **Corrente**, **Circulação do óleo**, **Topo do óleo**, **Ponto quente**, **Sobrecarga**).
+
+### Onde aparece
+
+Só no estágio montado e no corte. Desmontado e prancha ficam estáticos.
+
+### Modelo (`model.mjs`, fonte única, aproximado)
+
+- Topo do óleo: o modelo atual (regime + atraso de primeira ordem; ONAN/ONAF).
+- Ponto quente: topo do óleo + gradiente × carga^1,6 (estilo IEC 60076-7), cerca de 111 °C a 100 % de carga.
+- Nível do conservador (%): proporcional à temperatura média do óleo.
+- Respiração: entra ar quando o nível cai, sai quando sobe, parado quando estável.
+- Gás: com o ponto quente acima de 140 °C, acumula no Buchholz numa taxa proporcional ao excesso. Acima do limite de volume: alarme do Buchholz.
+- Desligamento térmico: ponto quente acima de 150 °C desliga o transformador.
+- Tempo acelerado (cerca de 7 s de figura para a constante térmica), com relógio de simulação em horas no painel.
+
+### Desenho (SVG animado, sem WebGL)
+
+- Fluxo magnético: linhas tracejadas animadas sobre pernas e jugos, só no corte; intensidade pela indução e pela fase de cada perna. Some com o transformador desligado.
+- Corrente: pulso de brilho nos bornes das buchas AT e BT no montado e pelas barras de ligação até as bobinas no corte; mais rápido com mais corrente, mais forte na BT (cerca de 5×).
+- Circulação do óleo: no montado, linhas animadas nos coletores (quente entra em cima, frio sai embaixo) e descendo pela face dos painéis; no corte, setas subindo pelos canais das bobinas e descendo pelas paredes. Velocidade cresce com a temperatura e com os ventiladores.
+- Cor: escala azul (frio) → vermelho (quente) só no óleo, nas bobinas e no termômetro. O resto mantém a paleta atual.
+- Gás: bolhas subindo da bobina até a tampa e pelo tubo até o Buchholz; o Buchholz mostra o volume acumulado.
+
+### Controles e leituras
+
+- Carga de 5 a 150 %, com a faixa acima de 100 % marcada como sobrecarga.
+- Falha só como consequência da carga: não há botão de falha.
+- Painel ganha: ponto quente, nível do conservador, respiração e estado do Buchholz (normal, gás acumulado, alarme, desligado), além de "tempo acelerado" e o relógio de simulação.
+- Canto da figura: tensão de saída, topo do óleo e ponto quente.
+
+### Desligamento e rearme
+
+- Desligado: corrente zero, fluxo some, óleo esfria aos poucos, ventiladores param abaixo de 65 °C, gás continua no Buchholz.
+- Botão "Rearmar" aparece desligado e só fica ativo com o ponto quente abaixo de 110 °C. Rearmar drena o gás, apaga o alarme e reenergiza com carga em 100 %.
+
+### Critério de pronto
+
+1. Cada fenômeno aparece no montado e no corte e some no desmontado e na prancha.
+2. Subir a carga acima de cerca de 130 % leva a gás, alarme e, se mantida, desligamento; o rearme só funciona abaixo de 110 °C.
+3. `lines.mjs` em 0 nos dois temas, nos poses montado e corte, com e sem animação.
+4. Movimento reduzido: um quadro parado, leituras corretas.
+5. Nada é commitado.
+
 ## Notas da implementação
 
 - 33 Peças (dentro dos 30 a 40 previstos). Peças repetidas (4 buchas BT, 3 ventiladores, 4 olhais etc.) aparecem uma vez na Prancha, com a quantidade na lista.

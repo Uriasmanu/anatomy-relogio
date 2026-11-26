@@ -32,6 +32,30 @@ _Avoid_: BOM, legenda
 Modo dos dois primeiros **Estágios** que retira as paredes próximas da cuba e deixa a tampa e o banco de radiadores quase transparentes, para mostrar a parte ativa e o nível do óleo.
 _Avoid_: Seção, raio-x
 
+**Fluxo magnético**:
+Campo alternado que percorre o núcleo pelas pernas e jugos, um por fase, defasados de 120°.
+_Avoid_: Fluxo (sozinho), campo
+
+**Corrente**:
+Eletricidade que entra pelas buchas de alta, passa pelos enrolamentos e sai pelas buchas de baixa.
+_Avoid_: Fluxo de eletricidade, energia
+
+**Circulação do óleo**:
+Caminho do óleo aquecido: sobe pelas bobinas até o topo da cuba, desce pelos radiadores esfriando e volta pelo fundo.
+_Avoid_: Fluxo de óleo, termossifão (como nome de peça)
+
+**Topo do óleo**:
+Temperatura do óleo na parte de cima da cuba, a que o **Termômetro do óleo** mede e que comanda os ventiladores.
+_Avoid_: Temperatura do óleo (sem dizer onde)
+
+**Ponto quente**:
+Temperatura do trecho mais quente do enrolamento, acima do **Topo do óleo** e crescente com a carga.
+_Avoid_: Hot spot, temperatura da bobina
+
+**Sobrecarga**:
+Carga acima de 100 % da potência nominal. Sustentada, aquece o **Ponto quente** até gerar gás e, no limite, desligar o transformador.
+_Avoid_: Excesso de carga, sobrecorrente
+
 **Carimbo**:
 Quadro no canto da **Prancha** com título, dados nominais, escala gráfica e revisão.
 _Avoid_: Cabeçalho, rodapé
