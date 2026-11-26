@@ -42,3 +42,15 @@ export function fansWanted(oil, running) {
 }
 
 export const OIL_TAU = 7;
+
+export const HOT_GRADIENT = 26;
+export const GAS_FROM = 140;
+export const GAS_RATE = 0.12;
+export const TRIP_HOT = 150;
+export const RESET_HOT = 110;
+export const HOT_TAU = 1.2;
+export const HOURS_PER_SECOND = 3 / OIL_TAU;
+
+export const hotSpot = (top, load) => top + HOT_GRADIENT * load ** 1.6;
+export const steadyOilOn = (load, fans, on) => (on ? steadyOil(load, fans) : RATED.ambient);
+export const conservatorLevel = (top) => Math.min(100, Math.max(5, 30 + (top - 20) * 0.6));

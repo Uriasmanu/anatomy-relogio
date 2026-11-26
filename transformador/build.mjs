@@ -12,6 +12,7 @@ import { PARTS, SYSTEMS, BOM_ORDER, STAMP } from "./parts.mjs";
 import { FAN_POS } from "./draw/refrig.mjs";
 import { TAP_STEP } from "./draw/ativa.mjs";
 import { OTI } from "./draw/protecao.mjs";
+import { GAS_IN, GAS_PIPE, LEVEL } from "./draw/fx.mjs";
 import { PAGE_CSS } from "./page-css.mjs";
 import { RATED } from "./model.mjs";
 
@@ -60,12 +61,16 @@ const data = {
   fans: FAN_POS,
   oti: OTI,
   tap: { step: TAP_STEP },
+  gasIn: GAS_IN,
+  gasPipe: GAS_PIPE,
+  level: LEVEL,
 };
 
 const cells = [
   ["vp", "Tensão AT"], ["vs", "Tensão BT"], ["tap", "Tap (AT)"], ["np", "Espiras AT / BT"],
   ["ip", "Corrente AT"], ["is", "Corrente BT"], ["load", "Carga"], ["flux", "Indução no núcleo"],
-  ["loss", "Perdas"], ["eff", "Rendimento"], ["oil", "Óleo (topo)"], ["fans", "Ventiladores"],
+  ["loss", "Perdas"], ["eff", "Rendimento"], ["oil", "Topo do óleo"], ["fans", "Ventiladores"],
+  ["hot", "Ponto quente"], ["level", "Nível do conservador"], ["breath", "Respiração"], ["buch", "Buchholz"],
 ];
 
 const toolbar = `<div class="tf-bar">
@@ -77,8 +82,10 @@ const toolbar = `<div class="tf-bar">
 
 const panel = `<div class="tf-panel">${cells.map(([id, label]) => `<div class="tf-cell"><b data-cell="${id}">–</b><span>${label}</span></div>`).join("")}</div>
 <div class="tf-controls">
-  <label>Carga <input id="tf-load" type="range" min="5" max="110" step="1" value="60" aria-label="Carga do transformador em porcentagem da potência nominal"></label>
+  <label>Carga <input id="tf-load" type="range" min="5" max="150" step="1" value="60" aria-label="Carga do transformador em porcentagem da potência nominal"><span class="tf-over" data-over>sobrecarga</span></label>
   <span class="tf-tap">Tap <button class="tf-btn" type="button" data-tap-down aria-label="Diminuir tap">−</button><output data-tapval>0,00 %</output><button class="tf-btn" type="button" data-tap-up aria-label="Aumentar tap">+</button></span>
+  <button class="tf-btn" type="button" data-rearm disabled>Rearmar</button>
+  <span class="tf-clock" data-clock>tempo acelerado</span>
 </div>`;
 
 const stamp = `<div class="tf-stamp"><div class="st-title">${STAMP.title}</div>${STAMP.rows.map(([a, b]) => `<div class="st-row"><span>${a}</span><b>${b}</b></div>`).join("")}<div class="st-foot"><span>${STAMP.rev}</span><span>${STAMP.scale}</span><span>${STAMP.project}</span></div></div>`;

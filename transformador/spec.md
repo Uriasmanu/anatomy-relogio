@@ -121,6 +121,9 @@ Só no estágio montado e no corte. Desmontado e prancha ficam estáticos.
 
 ## Notas da implementação
 
+- Fenômenos: a 130 % de carga o ponto quente passa de 140 °C, aparece gás e o Buchholz dá alarme sem desligar; a 150 % o alarme vem e, segundos depois, o desligamento térmico. Escala de cor é uma mistura direta azul → vermelho (sem passar por verde).
+- O tour automático não volta sozinho enquanto a carga estiver acima de 100 % ou o transformador estiver desligado.
+
 - 33 Peças (dentro dos 30 a 40 previstos). Peças repetidas (4 buchas BT, 3 ventiladores, 4 olhais etc.) aparecem uma vez na Prancha, com a quantidade na lista.
 - Na Prancha, o isométrico espalhado ocupa a largura toda; a lista e as vistas ortogonais com o carimbo ficam logo abaixo, lado a lado. Em celular, o isométrico rola na horizontal e o resto vira coluna única.
 - Teclado: Espaço avança o estágio, ←/→ escolhem o Sistema, ↑/↓ mudam a carga, Escape limpa a seleção.

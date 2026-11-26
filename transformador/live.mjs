@@ -31,6 +31,9 @@ const VBS = ${JSON.stringify(data.vbs)};
 const FANS = ${JSON.stringify(data.fans)};
 const OTI = ${JSON.stringify(data.oti)};
 const TAP = ${JSON.stringify(data.tap)};
+const GAS_IN = ${JSON.stringify(data.gasIn)};
+const GAS_PIPE = ${JSON.stringify(data.gasPipe)};
+const LEVEL = ${JSON.stringify(data.level)};
 ${FAN_SRC}
 const byId = Object.fromEntries(PARTS.map((p) => [p.id, p]));
 const root = document.querySelector("[data-root]");
@@ -66,12 +69,32 @@ const fanEls = qa("[data-fan]");
 const needleEl = svgRoot.querySelector("[data-oti-needle]");
 const tapArm = svgRoot.querySelector("[data-tap-arm]");
 const tapDots = qa("[data-tap-dot]");
+const bubIn = qa('[data-bub="in"]');
+const bubPipe = qa('[data-bub="pipe"]');
+const levelEl = svgRoot.querySelector("[data-level]");
+const rearmBtn = document.querySelector("[data-rearm]");
+const overEl = document.querySelector("[data-over]");
+const clockEl = document.querySelector("[data-clock]");
+function along(pts, u) {
+  const segs = [];
+  let total = 0;
+  for (let i = 0; i < pts.length - 1; i++) { const d = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1], pts[i + 1][2] - pts[i][2]); segs.push(d); total += d; }
+  let t = u * total;
+  for (let i = 0; i < segs.length; i++) {
+    if (t <= segs[i] || i === segs.length - 1) { const k = segs[i] ? Math.min(1, t / segs[i]) : 0; return pts[i].map((v, j) => v + (pts[i + 1][j] - v) * k); }
+    t -= segs[i];
+  }
+  return pts[pts.length - 1];
+}
+const HEAT = document.body.dataset.theme === "light" ? [[40, 100, 220], [215, 45, 40]] : [[90, 150, 255], [255, 95, 80]];
+const heat = (t) => { const k = clamp((t - 25) / 115, 0, 1); return "rgb(" + HEAT[0].map((v, i) => Math.round(v + (HEAT[1][i] - v) * k)).join(" ") + ")"; };
 const spring = Object.fromEntries(PARTS.map((p) => [p.id, { x: 0, v: 0, target: 0, at: 0, armed: false }]));
 const spread = Object.fromEntries(PARTS.map((p) => [p.id, 0]));
 const state = {
   stage: 0, sel: null, hov: null, sysFocus: null, off: new Set(), cut: false, clock: 0, spT0: -1, spDir: 0,
   vb: VBS[0].slice(), tap: 4, tapShown: 4, load: 0.6, oil: steadyOil(0.6, false), fans: false, fanRate: 0, fanAngle: 0,
   touring: !still.matches, idle: 0, say: "", tourT: 0,
+  on: true, tripped: false, gas: 0, gasRate: 0, alarm: false, hot: 0, level: 0, breath: 0, simH: 0, oilOff: 0, curOff: 0, fAb: 0, fBc: 0, th: 0, brOff: 0, bubT: 0,
 };
 let frame = 0, last = 0, visible = false;
 const STAGGER = 0.3, STIFF = 64, DRAG = 14.2;
@@ -166,12 +189,33 @@ function step(dt) {
     state.load += (target - state.load) * (1 - Math.exp(-dt / 0.8));
     state.tap = Math.round(4 + 4 * Math.sin((state.tourT / 26) * Math.PI * 2));
     loadInput.value = Math.round(state.load * 100);
-  } else { state.idle += dt; if (state.idle > 12 && !calm) { state.touring = true; state.tourT = 0; } }
+  } else { state.idle += dt; if (state.idle > 12 && !calm && state.load <= 1 && state.on) { state.touring = true; state.tourT = 0; } }
   state.tapShown = calm ? state.tap : state.tapShown + (state.tap - state.tapShown) * (1 - Math.exp(-dt / 0.22));
   if (Math.abs(state.tap - state.tapShown) < 0.004) state.tapShown = state.tap;
-  const goalOil = steadyOil(state.load, state.fans);
+  const eff = state.on ? state.load : 0;
+  const goalOil = steadyOilOn(eff, state.fans, state.on);
   state.oil = calm ? goalOil : state.oil + (goalOil - state.oil) * (1 - Math.exp(-dt / OIL_TAU));
   state.fans = fansWanted(state.oil, state.fans);
+  const goalHot = hotSpot(state.oil, eff);
+  state.hot = calm || !state.hot ? goalHot : state.hot + (goalHot - state.hot) * (1 - Math.exp(-dt / HOT_TAU));
+  state.gasRate = state.on && state.hot > GAS_FROM ? GAS_RATE * (state.hot - GAS_FROM) : 0;
+  state.gas += state.gasRate * dt;
+  if (state.gas >= 1) state.alarm = true;
+  if (state.on && state.hot > TRIP_HOT) { state.on = false; state.tripped = true; state.touring = false; }
+  const lvl = conservatorLevel(state.oil);
+  const dl = state.level ? (lvl - state.level) / Math.max(dt, 1e-3) : 0;
+  state.breath += (dl - state.breath) * (1 - Math.exp(-dt / 0.6));
+  state.level = lvl;
+  state.simH += dt * HOURS_PER_SECOND;
+  const k0 = calm ? 0 : dt;
+  const warm = clamp((state.oil - RATED.ambient) / RATED.rise, 0, 1.4);
+  state.oilOff += k0 * (5 + 22 * warm) * (state.fans ? 1.6 : 1);
+  state.curOff += k0 * 60 * eff;
+  state.th += k0 * Math.PI * 2 * 0.55;
+  state.fAb += k0 * 26 * Math.sin(state.th);
+  state.fBc += k0 * 26 * Math.sin(state.th - (2 * Math.PI) / 3);
+  state.brOff += k0 * 120 * state.breath;
+  state.bubT += k0 * 0.18;
   const want = state.fans ? 16 : 0;
   state.fanRate = calm ? want : state.fanRate + (want - state.fanRate) * (1 - Math.exp(-dt / 0.9));
   state.fanAngle += state.fanRate * dt;
@@ -220,12 +264,51 @@ function draw() {
     needleEl.setAttribute("d", segment([OTI.x, OTI.y, OTI.z], [OTI.x + OTI.r * Math.sin(a), OTI.y, OTI.z + OTI.r * Math.cos(a)], P));
   }
   fanEls.forEach((el) => { const i = Number(el.dataset.fan); const f = FANS[i]; const d = bladePath(f[0], f[1], f[2], state.fanAngle + i * 0.7); el.querySelectorAll("path").forEach((p) => p.setAttribute("d", d)); });
-  const vs = lineVoltageLV(state.tap), is = currentLV(state.tap, state.load), ip = currentHV(state.load);
+  const eff = state.on ? state.load : 0;
+  const vs = state.on ? lineVoltageLV(state.tap) : 0, is = currentLV(state.tap, eff), ip = currentHV(eff);
+  const liveOn = state.stage === 0 && PARTS.every((p) => spring[p.id].x === 0 && !spring[p.id].armed) && !sheet;
+  svgRoot.toggleAttribute("data-live", liveOn);
+  svgRoot.toggleAttribute("data-tripped", !state.on);
+  svgRoot.toggleAttribute("data-alarm", state.alarm);
+  const st = svgRoot.style;
+  const bot = RATED.ambient + 0.55 * (state.oil - RATED.ambient);
+  st.setProperty("--t-top", heat(state.oil));
+  st.setProperty("--t-bot", heat(bot));
+  st.setProperty("--t-hot", heat(state.hot));
+  st.setProperty("--oil-off", state.oilOff.toFixed(1));
+  st.setProperty("--cur-off", state.curOff.toFixed(1));
+  st.setProperty("--f-ab", state.fAb.toFixed(1));
+  st.setProperty("--f-bc", state.fBc.toFixed(1));
+  const B = state.on ? fluxDensity(state.tap) / RATED.B : 0;
+  st.setProperty("--f-ab-o", (B * (0.15 + 0.85 * Math.abs(Math.sin(state.th)))).toFixed(2));
+  st.setProperty("--f-bc-o", (B * (0.15 + 0.85 * Math.abs(Math.sin(state.th - (2 * Math.PI) / 3)))).toFixed(2));
+  st.setProperty("--br-off", state.brOff.toFixed(1));
+  st.setProperty("--br-o", clamp(Math.abs(state.breath) * 6, 0, 1).toFixed(2));
+  const bubOn = clamp(state.gasRate * 3, 0, 1);
+  const place = (els, pts, phase) => els.forEach((el, i) => { const [x, y] = iso(along(pts, (state.bubT * (1 + i * 0.07) + i / els.length + phase) % 1), P); el.setAttribute("cx", x.toFixed(1)); el.setAttribute("cy", y.toFixed(1)); el.style.opacity = liveOn ? String(bubOn) : "0"; });
+  place(bubIn, GAS_IN, 0);
+  place(bubPipe, GAS_PIPE, 0.3);
+  if (levelEl) {
+    const zl = LEVEL.z0 + (LEVEL.z1 - LEVEL.z0) * state.level / 100;
+    levelEl.setAttribute("d", pathOf([[LEVEL.x, LEVEL.y - LEVEL.w, LEVEL.z0], [LEVEL.x, LEVEL.y + LEVEL.w, LEVEL.z0], [LEVEL.x, LEVEL.y + LEVEL.w, zl], [LEVEL.x, LEVEL.y - LEVEL.w, zl]].map((p) => iso(p, P)), true));
+  }
+  rearmBtn.disabled = !(state.tripped && state.hot < RESET_HOT);
+  rearmBtn.textContent = state.tripped && state.hot >= RESET_HOT ? "Rearmar (esfriando)" : "Rearmar";
+  overEl.toggleAttribute("data-on", state.load > 1);
+  clockEl.textContent = "tempo acelerado · " + num(state.simH, 1) + " h";
+  cell("hot").textContent = num(state.hot, 0) + " °C";
+  cell("level").textContent = num(state.level, 0) + " %";
+  cell("breath").textContent = Math.abs(state.breath) < 0.05 ? "parado" : state.breath < 0 ? "entrando ar" : "saindo ar";
+  const bs = !state.on ? "desligado" : state.alarm ? "alarme" : state.gas > 0.02 ? "gás " + num(state.gas * 100, 0) + " %" : "normal";
+  const bcell = cell("buch");
+  bcell.textContent = bs;
+  bcell.dataset.state = state.alarm || !state.on ? "alarm" : "";
+  cell("oil").textContent = num(state.oil, 0) + " °C";
   const moving = PARTS.some((p) => spring[p.id].armed || spring[p.id].x !== spring[p.id].target);
   const id = effective();
   const label = id ? byId[id].n + " · " + byId[id].name
     : moving ? (state.stage ? "desmontando" : "montando")
-    : state.stage === 0 ? "Vs " + num(vs / 1000, 2) + " kV · óleo " + num(state.oil, 0) + " °C"
+    : state.stage === 0 ? (state.on ? "Vs " + num(vs / 1000, 2) + " kV · óleo " + num(state.oil, 0) + " °C · PQ " + num(state.hot, 0) + " °C" : "desligado · PQ " + num(state.hot, 0) + " °C")
     : state.stage === 1 ? "desmontado · " + SYSTEMS.length + " sistemas"
     : settled ? "prancha · " + PARTS.length + " peças" : "montando a prancha";
   if (label !== state.say) {
@@ -275,14 +358,15 @@ document.querySelectorAll(".iso-stage, .tf-ortho").forEach((area) => {
 });
 document.querySelector("[data-tap-down]").addEventListener("click", () => { take(); state.tap = clamp(state.tap - 1, 0, 8); run(); });
 document.querySelector("[data-tap-up]").addEventListener("click", () => { take(); state.tap = clamp(state.tap + 1, 0, 8); run(); });
-loadInput.addEventListener("input", () => { take(); state.load = clamp(Number(loadInput.value) / 100, 0.05, 1.1); run(); });
+loadInput.addEventListener("input", () => { take(); state.load = clamp(Number(loadInput.value) / 100, 0.05, 1.5); run(); });
+rearmBtn.addEventListener("click", () => { if (rearmBtn.disabled) return; take(); state.on = true; state.tripped = false; state.gas = 0; state.alarm = false; state.load = 1; loadInput.value = 100; run(); });
 stage.addEventListener("keydown", (e) => {
   const ids = SYSTEMS.map((s) => s.id);
   const at = state.sysFocus ? ids.indexOf(state.sysFocus) : -1;
   if (e.key === " " || e.key === "Enter") { e.preventDefault(); take(); setStage((state.stage + 1) % 3); }
   else if (e.key === "ArrowRight") { e.preventDefault(); take(); focusSystem(ids[(at + 1) % ids.length]); }
   else if (e.key === "ArrowLeft") { e.preventDefault(); take(); focusSystem(ids[(at - 1 + ids.length) % ids.length]); }
-  else if (e.key === "ArrowUp") { e.preventDefault(); take(); state.load = clamp(state.load + 0.05, 0.05, 1.1); loadInput.value = Math.round(state.load * 100); run(); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); take(); state.load = clamp(state.load + 0.05, 0.05, 1.5); loadInput.value = Math.round(state.load * 100); run(); }
   else if (e.key === "ArrowDown") { e.preventDefault(); take(); state.load = clamp(state.load - 0.05, 0.05, 1.1); loadInput.value = Math.round(state.load * 100); run(); }
   else if (e.key === "Escape") { take(); state.sel = null; state.sysFocus = null; paintSelection(); }
   else if (e.key === "Home") { take(); setStage(0); }

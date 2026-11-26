@@ -6,6 +6,7 @@ import { drawRadiadores, drawVentiladores } from "./draw/refrig.mjs";
 import { drawConservador, drawSuportes, drawTubo, drawBuchholz, drawRespirador, drawTermometro, drawArmario, drawEletrodutos, drawEscada } from "./draw/protecao.mjs";
 import { drawPernas, drawJugos, drawBobinasAT, drawBobinasBT, drawCilindros, drawCalcos, drawComutador, drawLigacoes } from "./draw/ativa.mjs";
 import { PARTS, partById } from "./parts.mjs";
+import { drawFx } from "./draw/fx.mjs";
 
 export const WIDTH = 1000;
 export const HEIGHT = 700;
@@ -72,6 +73,7 @@ export function buildScene() {
   drawArmario(c);
   drawEletrodutos(c);
   drawEscada(c);
+  drawFx(c);
   return { P, c, items: c.items };
 }
 
