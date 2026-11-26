@@ -66,19 +66,5 @@ export function annotations(P, sheet, bounds, anchorOf) {
   return `<g class="sheet-ann">${out.join("")}</g>`;
 }
 
-export function bomHtml() {
-  const rows = BOM_ORDER.map(
-    (s) =>
-      `<tbody data-sys="${s.id}"><tr class="bom-sys"><th colspan="4"><button type="button" class="bom-toggle" data-sys-toggle="${s.id}" aria-pressed="true"><i></i>${s.n} · ${s.name}</button></th></tr>` +
-      s.parts
-        .map(
-          (p) =>
-            `<tr class="bom-row" tabindex="0" data-pick="${p.id}"><td class="n">${p.n}</td><td class="nm">${p.name}</td><td class="q">${p.qty}</td><td class="nom">${p.nominal}</td></tr>`,
-        )
-        .join("") +
-      `</tbody>`,
-  ).join("");
-  return `<table class="bom"><caption>Lista de materiais</caption><thead><tr><th>Nº</th><th>Peça</th><th>Qtd</th><th>Dado nominal</th></tr></thead>${rows}</table>`;
-}
 
 void PARTS;

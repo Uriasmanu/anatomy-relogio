@@ -1,0 +1,1 @@
+[["wait",800],["eval","__tf.state.clock.toFixed(2)"],["wait",1000],["eval","__tf.state.clock.toFixed(2)"],["eval","__tf.setStage(1)"],["wait",1000],["eval","__tf.state.clock.toFixed(2)"],["wait",1000],["eval","__tf.state.clock.toFixed(2)"]]

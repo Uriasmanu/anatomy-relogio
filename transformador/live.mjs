@@ -70,6 +70,18 @@ const needleEl = svgRoot.querySelector("[data-oti-needle]");
 const tapArm = svgRoot.querySelector("[data-tap-arm]");
 const tapDots = qa("[data-tap-dot]");
 const bubIn = qa('[data-bub="in"]');
+const fxOil = qa(".fx-oil:not(.fx-rev)");
+const fxOilRev = qa(".fx-oil.fx-rev");
+const fxCur = qa(".fx-cur");
+const fxAb = qa('[data-flux="ab"]');
+const fxBc = qa('[data-flux="bc"]');
+const fxBreath = qa("[data-breath]");
+const setAll = (els, prop, v) => { for (const el of els) el.style[prop] = v; };
+let heatKey = "";
+let svgW = 1000, lastTk = "";
+const measure = () => { svgW = svgRoot.getBoundingClientRect().width || 1000; };
+new ResizeObserver(measure).observe(svgRoot);
+const heatEls = [...nodes.filter((n) => ["at", "bt", "oleo", "termometro", "conservador", "radA"].includes(n.id)).map((n) => n.el)];
 const bubPipe = qa('[data-bub="pipe"]');
 const levelEl = svgRoot.querySelector("[data-level]");
 const rearmBtn = document.querySelector("[data-rearm]");
@@ -143,7 +155,7 @@ function paintSelection() {
   const s = sys ? SYSTEMS.find((x) => x.id === sys) : null;
   info.textContent = p ? p.n + " · " + p.name + " — " + p.does + " " + p.nominal + (p.qty > 1 ? " (" + p.qty + " no total)." : ".")
     : s ? s.n + " · " + s.name + ": " + PARTS.filter((x) => x.sys === s.id).map((x) => x.name).join(", ") + "."
-    : "Passe o mouse sobre uma peça ou escolha uma linha da lista. O botão avança: montado, desmontado, prancha.";
+    : "Passe o mouse sobre uma peça ou um balão. O botão avança: montado, desmontado, prancha.";
   stage.setAttribute("aria-valuetext", p ? p.name : s ? s.name : "nenhuma peça selecionada");
   if (id === "oleo" && state.stage < 2 && !state.cut) setCut(true);
   run();
@@ -254,8 +266,8 @@ function draw() {
   if (state.stage === 2 && state.cut) setCut(false);
   const vb = state.vb;
   svgRoot.setAttribute("viewBox", vb.map((v) => v.toFixed(2)).join(" "));
-  const w = svgRoot.getBoundingClientRect().width || 1000;
-  svgRoot.style.setProperty("--tk", (vb[2] / w).toFixed(3));
+  const tk = (vb[2] / svgW).toFixed(2);
+  if (tk !== lastTk) { lastTk = tk; svgRoot.style.setProperty("--tk", tk); }
   const tap = state.tapShown;
   if (tapArm) tapArm.setAttribute("transform", translateAlong(P, [0, 0, TAP.step * tap]));
   tapDots.forEach((d) => d.toggleAttribute("data-lit", Number(d.dataset.tapDot) === state.tap));
@@ -270,22 +282,31 @@ function draw() {
   svgRoot.toggleAttribute("data-live", liveOn);
   svgRoot.toggleAttribute("data-tripped", !state.on);
   svgRoot.toggleAttribute("data-alarm", state.alarm);
-  const st = svgRoot.style;
   const bot = RATED.ambient + 0.55 * (state.oil - RATED.ambient);
-  st.setProperty("--t-top", heat(state.oil));
-  st.setProperty("--t-bot", heat(bot));
-  st.setProperty("--t-hot", heat(state.hot));
-  st.setProperty("--oil-off", state.oilOff.toFixed(1));
-  st.setProperty("--cur-off", state.curOff.toFixed(1));
-  st.setProperty("--f-ab", state.fAb.toFixed(1));
-  st.setProperty("--f-bc", state.fBc.toFixed(1));
-  const B = state.on ? fluxDensity(state.tap) / RATED.B : 0;
-  st.setProperty("--f-ab-o", (B * (0.15 + 0.85 * Math.abs(Math.sin(state.th)))).toFixed(2));
-  st.setProperty("--f-bc-o", (B * (0.15 + 0.85 * Math.abs(Math.sin(state.th - (2 * Math.PI) / 3)))).toFixed(2));
-  st.setProperty("--br-off", state.brOff.toFixed(1));
-  st.setProperty("--br-o", clamp(Math.abs(state.breath) * 6, 0, 1).toFixed(2));
+  const key = Math.round(state.oil) + "|" + Math.round(state.hot);
+  if (key !== heatKey) {
+    heatKey = key;
+    const top = heat(state.oil), cold = heat(bot), hot = heat(state.hot);
+    for (const el of heatEls) { el.style.setProperty("--t-top", top); el.style.setProperty("--t-bot", cold); el.style.setProperty("--t-hot", hot); }
+  }
+  if (liveOn) {
+    setAll(fxOil, "strokeDashoffset", (-state.oilOff).toFixed(1));
+    setAll(fxOilRev, "strokeDashoffset", state.oilOff.toFixed(1));
+    setAll(fxCur, "strokeDashoffset", (-state.curOff).toFixed(1));
+    const B = state.on ? fluxDensity(state.tap) / RATED.B : 0;
+    setAll(fxAb, "strokeDashoffset", state.fAb.toFixed(1));
+    setAll(fxBc, "strokeDashoffset", state.fBc.toFixed(1));
+    setAll(fxAb, "opacity", (B * (0.15 + 0.85 * Math.abs(Math.sin(state.th)))).toFixed(2));
+    setAll(fxBc, "opacity", (B * (0.15 + 0.85 * Math.abs(Math.sin(state.th - (2 * Math.PI) / 3)))).toFixed(2));
+    setAll(fxBreath, "strokeDashoffset", state.brOff.toFixed(1));
+    setAll(fxBreath, "opacity", clamp(Math.abs(state.breath) * 6, 0, 1).toFixed(2));
+  } else {
+    setAll(fxAb, "opacity", "");
+    setAll(fxBc, "opacity", "");
+    setAll(fxBreath, "opacity", "");
+  }
   const bubOn = clamp(state.gasRate * 3, 0, 1);
-  const place = (els, pts, phase) => els.forEach((el, i) => { const [x, y] = iso(along(pts, (state.bubT * (1 + i * 0.07) + i / els.length + phase) % 1), P); el.setAttribute("cx", x.toFixed(1)); el.setAttribute("cy", y.toFixed(1)); el.style.opacity = liveOn ? String(bubOn) : "0"; });
+  const place = (els, pts, phase) => (liveOn || els[0]?.style.opacity !== "0") && els.forEach((el, i) => { const [x, y] = iso(along(pts, (state.bubT * (1 + i * 0.07) + i / els.length + phase) % 1), P); el.setAttribute("cx", x.toFixed(1)); el.setAttribute("cy", y.toFixed(1)); el.style.opacity = liveOn ? String(bubOn) : "0"; });
   place(bubIn, GAS_IN, 0);
   place(bubPipe, GAS_PIPE, 0.3);
   if (levelEl) {

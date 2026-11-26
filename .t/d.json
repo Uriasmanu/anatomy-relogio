@@ -1,0 +1,1 @@
+[["wait",1500],["eval","window.__frames"],["wait",2000],["eval","window.__frames"],["eval","(()=>{const t=performance.now(); for(let i=0;i<5;i++){document.querySelector('.iso-stage svg').getBoundingClientRect();} return 'x'})()"]]

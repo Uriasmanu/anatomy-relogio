@@ -5,7 +5,7 @@ import * as k from "./kit/iso-kit.mjs";
 import { kitScript } from "./scripts/inline-kit.mjs";
 import { buildScene, layerHtml, WIDTH, HEIGHT } from "./scene.mjs";
 import { instanceBounds, packSheet, boundsOf } from "./layout.mjs";
-import { annotations, bomHtml } from "./sheet.mjs";
+import { annotations } from "./sheet.mjs";
 import { orthoHtml } from "./ortho.mjs";
 import { liveScript } from "./live.mjs";
 import { PARTS, SYSTEMS, BOM_ORDER, STAMP } from "./parts.mjs";
@@ -47,7 +47,7 @@ const svg = k.figureSvg({
   width: WIDTH,
   height: HEIGHT,
   label:
-    "Transformador de potência a óleo em três estágios. Montado: cuba de aço sobre a base, tampa com buchas de alta e baixa tensão, conservador de óleo, radiadores com ventiladores e armário de comando. Desmontado: as peças saem sistema por sistema. Prancha: todas as peças numeradas e espalhadas, com lista de materiais e vistas ortogonais.",
+    "Transformador de potência a óleo em três estágios. Montado: cuba de aço sobre a base, tampa com buchas de alta e baixa tensão, conservador de óleo, radiadores com ventiladores e armário de comando. Desmontado: as peças saem sistema por sistema. Prancha: todas as peças numeradas e espalhadas, com vistas ortogonais.",
   body: [...[0, 1, 2, 3, 4, 5, 6, 7].map((l) => layerHtml(items, l)), annotations(P, sheet, bounds)],
 });
 
@@ -100,10 +100,10 @@ const fig = k.plateHtml({
     { mark: "raised", label: "As outras peças" },
   ],
   caption:
-    `Transformador trifásico de 25 MVA, 69 kV Δ → 13,8 kV Y, ONAN/ONAF. Montado, ele mostra a tensão de saída e a temperatura do óleo reagindo à carga e ao tap. Desmontado, cada sistema sai na sua ordem. Na prancha, as ${PARTS.length} peças aparecem numeradas, com a lista de materiais e as vistas ortogonais.`,
+    `Transformador trifásico de 25 MVA, 69 kV Δ → 13,8 kV Y, ONAN/ONAF. Montado, ele mostra a tensão de saída e a temperatura do óleo reagindo à carga e ao tap. Desmontado, cada sistema sai na sua ordem. Na prancha, as ${PARTS.length} peças aparecem numeradas, com as vistas ortogonais e o carimbo.`,
   body: `<div class="iso-stage" tabindex="0" role="application" aria-label="Transformador de potência: Espaço avança o estágio, setas esquerda e direita escolhem um sistema, setas para cima e para baixo mudam a carga, Escape limpa a seleção" aria-valuetext="nenhuma peça selecionada">${svg}</div>`,
 });
 
-const body = `<style>${PAGE_CSS}</style><div class="tf-root" data-root data-stage="0">${fig}${toolbar}${panel}<div class="tf-board">${bomHtml()}<div class="tf-side">${orthoHtml()}${stamp}</div></div></div>`;
+const body = `<style>${PAGE_CSS}</style><div class="tf-root" data-root data-stage="0">${fig}${toolbar}${panel}<div class="tf-board"><div class="tf-side">${orthoHtml()}${stamp}</div></div></div>`;
 writeFileSync(join(HERE, OUT), k.pageHtml({ title: "Transformador de potência", theme, body, script: kitScript() + liveScript(data), width: 1100 }));
 console.log("wrote", OUT, "items:", items.length, "sheet", Math.round(sheet.width), "x", Math.round(sheet.height), "parts", PARTS.length, "rated", RATED.S);

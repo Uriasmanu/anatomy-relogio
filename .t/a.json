@@ -1,0 +1,1 @@
+[["wait",800],["eval","__tf.setStage(1)"],["wait",3500],["eval","__tf.setStage(2)"],["wait",4500],["lines"],["click",".sh-bal[data-p='cuba']"],["wait",400],["eval","document.querySelector('[data-info]').textContent.slice(0,80)"],["shot","../.t/s2.png","[data-root]",0.7]]
