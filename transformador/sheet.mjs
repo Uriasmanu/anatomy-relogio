@@ -8,7 +8,7 @@ const ANCHOR = {
   "flanges|0": [111, -67, 263],
   "tampoes|0": [0, -90, 268],
   "olhais|0": [-48, -144, 270],
-  "ventiladores|0": [192, -10, 62],
+  "ventiladores|0": [192, -67.5, 62],
   "cilindros|0": [46, -35, 190],
   "eletrodutos|0": [34, 281, 40],
   "suportes|0": [-35, -150, 268],

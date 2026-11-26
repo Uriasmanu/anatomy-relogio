@@ -36,7 +36,8 @@ export function drawRadiadores(c) {
 
 export const FAN_Z = 44;
 export const FAN_R = 25;
-export const FAN_POS = [-10, 85, 180, -10, 85, 180].map((y, i) => [(i < 3 ? RAD_R_X : RAD_L_X) + RAD.depth / 2, y, FAN_Z + 16]);
+const FAN_Y = [-67.5, 22.5, 112.5, 202.5];
+export const FAN_POS = [...FAN_Y, ...FAN_Y].map((y, i) => [(i < 4 ? RAD_R_X : RAD_L_X) + RAD.depth / 2, y, FAN_Z + 16]);
 
 export function drawVentiladores(c) {
   const { G, P, S, L, put, dotsAt, frameZ } = c;
@@ -51,7 +52,7 @@ export function drawVentiladores(c) {
     out.push(S(G.disc(10, 22, 6, F, P), { tone: "mid", crease: "lo" }));
     const Fg = frameZ(cx, y, FAN_Z + 28);
     out.push(L(G.circleOf(Fg, 0, FAN_R - 1, P) + G.circleOf(Fg, 0, 15, P) + G.circleOf(Fg, 0, 6, P) + G.spokesOf(Fg, 0, 6, FAN_R - 1, 8, P), { tone: "lo" }));
-    const left = i >= 3;
-    put(left ? 1 : 5, "ventiladores", [cx, y, FAN_Z + 14], out.join(""), left ? 500 + i : 400 + i, { inst: i ? "x" + i : "0", move: left ? partById.radB.move : null });
+    const left = i >= 4;
+    put(left ? 1 : 5, "ventiladores", [cx, y, 160], out.join(""), -0.5, { inst: i ? "x" + i : "0", move: left ? partById.radB.move : null });
   });
 }

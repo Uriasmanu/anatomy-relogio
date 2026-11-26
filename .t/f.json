@@ -1,0 +1,1 @@
+[["wait",900],["shot","../.t/fan.png",null,2.5,[440,420,420,260]],["lines"],["eval","__tf.setCut(true)"],["wait",700],["lines"],["eval","__tf.setCut(false);__tf.setStage(1)"],["wait",3500],["lines"],["eval","__tf.setStage(2)"],["wait",4500],["lines"]]

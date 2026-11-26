@@ -116,7 +116,7 @@ function lateral() {
   }
   v.line("radA", [[-140, 90], [260, 90]]);
   v.line("radA", [[-140, 238], [260, 238]]);
-  [-10, 85, 180].forEach((y) => v.rect("ventiladores", y - 28, 44, y + 28, 76));
+  [-67.5, 22.5, 112.5, 202.5].forEach((y) => v.rect("ventiladores", y - 28, 44, y + 28, 76));
   v.rect("armario", CAB.y, CAB.z0, CAB.y + CAB.d, CAB.z1);
   v.rect("escada", TY1 + 6, 50, TY1 + 10, 250);
   v.rect("termometro", TY1, 184, TY1 + 8, 208);
@@ -145,7 +145,7 @@ function plan() {
   v.rect("tampa", -58, -154, 158, 278);
   v.rect("radB", RAD_L_X, -120, RAD_L_X + RAD.depth, 255);
   v.rect("radA", RAD_R_X, -120, RAD_R_X + RAD.depth, 255);
-  [-10, 85, 180].forEach((y) => [192, -98].forEach((x) => { v.circ("ventiladores", x, y, 28); v.circ("ventiladores", x, y, 6, "line"); }));
+  [-67.5, 22.5, 112.5, 202.5].forEach((y) => [192, -98].forEach((x) => { v.circ("ventiladores", x, y, 28); v.circ("ventiladores", x, y, 6, "line"); }));
   v.rect("armario", CAB.x, CAB.y, CAB.x + CAB.w, CAB.y + CAB.d);
   v.rect("escada", -42, TY1 + 6, -14, TY1 + 10);
   v.rect("conservador", CONS.x0, CONS.y - CONS.r, CONS.x0 + CONS.len, CONS.y + CONS.r);
