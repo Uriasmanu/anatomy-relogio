@@ -76,7 +76,7 @@ function lvOutline(v, h, z) {
 }
 
 function frontal() {
-  const v = new View("f", "Vista frontal", "x", "z", [-205, -60, 255, 440], false);
+  const v = new View("f", "Vista frontal", "x", "z", [-205, -60, 255, 600], false);
   v.rect("base", -62, 0, 155, Z_BASE);
   v.rect("cuba", TX0, Z_BASE, TX1, Z_WALL);
   v.rect("tampa", -58, Z_WALL, 158, Z_LID);
@@ -110,7 +110,7 @@ function frontal() {
 }
 
 function lateral() {
-  const v = new View("l", "Vista lateral", "y", "z", [-315, -60, 300, 440], false);
+  const v = new View("l", "Vista lateral", "y", "z", [-350, -60, 300, 600], false);
   v.rect("base", -158, 0, 282, Z_BASE);
   v.rect("cuba", TY0, Z_BASE, TY1, Z_WALL);
   v.rect("tampa", -154, Z_WALL, 278, Z_LID);
@@ -174,7 +174,7 @@ function plan() {
 }
 
 function section() {
-  const v = new View("s", "Corte A-A", "y", "z", [-255, -60, 300, 440], false);
+  const v = new View("s", "Corte A-A", "y", "z", [-300, -60, 300, 600], false);
   const h = (part, u0, v0, u1, v1) => {
     v.out.push(`<rect class="ov" ${HATCH("s")} data-p="${part}" x="${Math.min(u0, u1)}" y="${v.Y(Math.max(v0, v1))}" width="${Math.abs(u1 - u0)}" height="${Math.abs(v1 - v0)}"/>`);
   };

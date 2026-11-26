@@ -24,6 +24,23 @@ export function lvPorcelain() {
   return p;
 }
 
+function porcelainSvg(c, F, { from, neck, core, shed, count, pitch, cap }) {
+  const { G, P, S } = c;
+  const out = [S(G.solidOf(neck, F, P), { tone: "hi", crease: "lo" })];
+  let s0 = neck[neck.length - 1][0];
+  for (let i = 0; i < count; i++) {
+    const s = from + i * pitch;
+    out.push(S(G.solidOf([[s0, core], [s, core]], F, P), { tone: "hi", crease: "none" }));
+    out.push(S(G.solidOf([[s, core + 0.5], [s + 0.5, shed], [s + 1.7, shed], [s + 2.3, core + 0.5]], F, P), { tone: "hi", crease: "lo" }));
+    s0 = s + 2.3;
+  }
+  out.push(S(G.solidOf([[s0, core], [cap[0][0], core]], F, P), { tone: "hi", crease: "none" }));
+  out.push(S(G.solidOf(cap, F, P), { tone: "lo", crease: "lo" }));
+  return out.join("");
+}
+const HV_PORC = { from: 98, neck: [[85, 12], [95, 12], [95, 8], [96, 8]], core: 8, shed: 15, count: 34, pitch: 5.6, cap: [[292, 9.5], [300, 9.5], [300, 3], [312, 3], [312, 4.5], [318, 4.5], [318, 2], [326, 2]] };
+const LV_PORC = { from: 41, neck: [[34, 8], [38, 8], [38, 5.5], [39, 5.5]], core: 5.5, shed: 10, count: 11, pitch: 5.2, cap: [[99, 6.5], [105, 6.5], [105, 2.4], [116, 2.4], [116, 3.6], [121, 3.6], [121, 1.6], [128, 1.6]] };
+
 const bolts = (c, F, s, r, n, o) => c.dotsAt(Array.from({ length: n }, (_, i) => c.G.pointOf(F, s, r, (i / n) * Math.PI * 2)).filter((pt) => c.G.dot3(c.G.sub3(pt, o), c.V) > -r * 0.2), { tone: "hi" });
 
 export function drawFlanges(c) {
@@ -52,13 +69,13 @@ export function drawBuchasAT(c) {
     const a = hvAxis(phi);
     const [x, y] = base;
     const F = G.frameAlong([x, y, Z_LID], a);
-    put(7, HV_IDS[index], [x + a[0] * 160, y + a[1] * 160, Z_LID + a[2] * 160], S(G.solidOf(hvPorcelain(), F, P), { tone: "hi" }), index * 0.2);
+    put(7, HV_IDS[index], [x + a[0] * 160, y + a[1] * 160, Z_LID + a[2] * 160], porcelainSvg(c, F, HV_PORC), index * 0.2);
   });
 }
 
 export function drawBuchasBT(c) {
   const { G, P, S, put, frameZ } = c;
   LV.forEach(([x, y], index) => {
-    put(7, "buchaBT", [x, y, Z_LID + 70], S(G.solidOf(lvPorcelain(), frameZ(x, y, Z_LID), P), { tone: "hi" }), 0, { inst: index ? "x" + index : "0" });
+    put(7, "buchaBT", [x, y, Z_LID + 70], porcelainSvg(c, frameZ(x, y, Z_LID), LV_PORC), 0, { inst: index ? "x" + index : "0" });
   });
 }

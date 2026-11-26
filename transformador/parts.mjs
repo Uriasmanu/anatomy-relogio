@@ -55,6 +55,7 @@ const M = {
   ativa: [0, 0, 140],
   radA: [125, 0, 0],
   radB: [-125, 0, 0],
+  fanA: [215, 0, -22],
   cons: [0, -80, 70],
   arm: [0, 100, 0],
   bt: [0, 0, 235],
@@ -92,7 +93,7 @@ export const PARTS = [
 
   P("radA", "refrig", "Radiadores, lado direito", "Painéis de chapa por onde o óleo quente desce e se resfria. Cada painel tem um coletor em cima e outro embaixo.", `8 painéis · ${fmt(RATED.S / 1e6, 0)} MVA ONAF`, 8, M.radA, [192, 0, 150], ["z", 70, 255, 148, 260]),
   P("radB", "refrig", "Radiadores, lado esquerdo", "Segundo banco de painéis, ligado ao outro lado da cuba. Os dois bancos juntos definem quanto calor o transformador dissipa.", "8 painéis", 8, M.radB, [-98, 0, 150], ["z", 70, 255, -132, 260]),
-  P("ventiladores", "refrig", "Ventiladores", "Sopram ar pelos painéis quando o óleo passa do limite. Entram acima de 75 °C e só saem abaixo de 65 °C, para não ligar e desligar o tempo todo.", `Liga ${RATED.onAt} °C · desliga ${RATED.offAt} °C`, 8, M.radA, [192, -67.5, 62], null),
+  P("ventiladores", "refrig", "Ventiladores", "Sopram ar pelos painéis quando o óleo passa do limite. Entram acima de 75 °C e só saem abaixo de 65 °C, para não ligar e desligar o tempo todo.", `Liga ${RATED.onAt} °C · desliga ${RATED.offAt} °C`, 8, M.fanA, [192, -67.5, 62], null),
 
   P("conservador", "protecao", "Conservador de óleo", "Reservatório de expansão: recebe o óleo quando ele esquenta e dilata. Tem um indicador de nível numa das tampas.", "Tanque cilíndrico", 1, M.cons, [30, CONS.y, CONS.z + CONS.r], ["x", -45, 147, -208, 424]),
   P("suportes", "protecao", "Suportes do conservador", "Escoras de aço inclinadas que apoiam o conservador sobre a tampa, longe das buchas.", "2 suportes", 2, M.cons, [-35, -170, 330], null),
