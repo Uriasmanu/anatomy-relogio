@@ -4,7 +4,7 @@ import { PARTS, SYSTEMS, BOM_ORDER } from "./parts.mjs";
 const NUM = /-?\d+(?:\.\d+)?/g;
 
 export function boundsOf(svg) {
-  const clean = svg.replace(/<clipPath[\s\S]*?<\/clipPath>/g, "").replace(/<circle class="fx-bub"[^>]*\/>/g, "");
+  const clean = svg.replace(/<clipPath[\s\S]*?<\/clipPath>/g, "");
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   const take = (x, y) => {
     if (x < x0) x0 = x;

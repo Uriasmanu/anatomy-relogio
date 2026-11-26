@@ -110,7 +110,6 @@ export const PAGE_CSS = `
 
 
 .fx-line{fill:none;stroke-width:1.5px;stroke-linecap:round;opacity:0;transition:opacity .5s;pointer-events:none}
-.fx-bub{fill:var(--anatomy-paper);stroke:var(--anatomy-lit);stroke-width:.8px;opacity:0;pointer-events:none}
 .fx-glass{fill:var(--anatomy-face);stroke:var(--anatomy-hi);stroke-width:.8px}
 .fx-level{fill:var(--t-top, var(--anatomy-mid));stroke:none}
 [data-live] .fx-line{opacity:1}

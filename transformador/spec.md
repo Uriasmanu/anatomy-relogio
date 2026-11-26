@@ -121,6 +121,8 @@ Só no estágio montado e no corte. Desmontado e prancha ficam estáticos.
 
 ## Notas da implementação
 
+- A lista de materiais foi retirada da página a pedido. Os Balões continuam numerados; apontar ou clicar num Balão ou numa Peça mostra número, nome, função, dado nominal e quantidade na linha de informação. Na Prancha, as vistas ortogonais e o carimbo ocupam a largura toda abaixo do desenho.
+
 - Fenômenos: a 130 % de carga o ponto quente passa de 140 °C, aparece gás e o Buchholz dá alarme sem desligar; a 150 % o alarme vem e, segundos depois, o desligamento térmico. Escala de cor é uma mistura direta azul → vermelho (sem passar por verde).
 - O tour automático não volta sozinho enquanto a carga estiver acima de 100 % ou o transformador estiver desligado.
 

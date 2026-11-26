@@ -31,8 +31,6 @@ const VBS = ${JSON.stringify(data.vbs)};
 const FANS = ${JSON.stringify(data.fans)};
 const OTI = ${JSON.stringify(data.oti)};
 const TAP = ${JSON.stringify(data.tap)};
-const GAS_IN = ${JSON.stringify(data.gasIn)};
-const GAS_PIPE = ${JSON.stringify(data.gasPipe)};
 const LEVEL = ${JSON.stringify(data.level)};
 ${FAN_SRC}
 const byId = Object.fromEntries(PARTS.map((p) => [p.id, p]));
@@ -69,7 +67,6 @@ const fanEls = qa("[data-fan]");
 const needleEl = svgRoot.querySelector("[data-oti-needle]");
 const tapArm = svgRoot.querySelector("[data-tap-arm]");
 const tapDots = qa("[data-tap-dot]");
-const bubIn = qa('[data-bub="in"]');
 const fxOil = qa(".fx-oil:not(.fx-rev)");
 const fxOilRev = qa(".fx-oil.fx-rev");
 const fxCur = qa(".fx-cur");
@@ -82,22 +79,10 @@ let svgW = 1000, lastTk = "";
 const measure = () => { svgW = svgRoot.getBoundingClientRect().width || 1000; };
 new ResizeObserver(measure).observe(svgRoot);
 const heatEls = [...nodes.filter((n) => ["at", "bt", "oleo", "termometro", "conservador", "radA"].includes(n.id)).map((n) => n.el)];
-const bubPipe = qa('[data-bub="pipe"]');
 const levelEl = svgRoot.querySelector("[data-level]");
 const rearmBtn = document.querySelector("[data-rearm]");
 const overEl = document.querySelector("[data-over]");
 const clockEl = document.querySelector("[data-clock]");
-function along(pts, u) {
-  const segs = [];
-  let total = 0;
-  for (let i = 0; i < pts.length - 1; i++) { const d = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1], pts[i + 1][2] - pts[i][2]); segs.push(d); total += d; }
-  let t = u * total;
-  for (let i = 0; i < segs.length; i++) {
-    if (t <= segs[i] || i === segs.length - 1) { const k = segs[i] ? Math.min(1, t / segs[i]) : 0; return pts[i].map((v, j) => v + (pts[i + 1][j] - v) * k); }
-    t -= segs[i];
-  }
-  return pts[pts.length - 1];
-}
 const HEAT = document.body.dataset.theme === "light" ? [[40, 100, 220], [215, 45, 40]] : [[90, 150, 255], [255, 95, 80]];
 const heat = (t) => { const k = clamp((t - 25) / 115, 0, 1); return "rgb(" + HEAT[0].map((v, i) => Math.round(v + (HEAT[1][i] - v) * k)).join(" ") + ")"; };
 const spring = Object.fromEntries(PARTS.map((p) => [p.id, { x: 0, v: 0, target: 0, at: 0, armed: false }]));
@@ -106,7 +91,7 @@ const state = {
   stage: 0, sel: null, hov: null, sysFocus: null, off: new Set(), cut: false, clock: 0, spT0: -1, spDir: 0,
   vb: VBS[0].slice(), tap: 4, tapShown: 4, load: 0.6, oil: steadyOil(0.6, false), fans: false, fanRate: 0, fanAngle: 0,
   touring: !still.matches, idle: 0, say: "", tourT: 0,
-  on: true, tripped: false, gas: 0, gasRate: 0, alarm: false, hot: 0, level: 0, breath: 0, simH: 0, oilOff: 0, curOff: 0, fAb: 0, fBc: 0, th: 0, brOff: 0, bubT: 0,
+  on: true, tripped: false, gas: 0, gasRate: 0, alarm: false, hot: 0, level: 0, breath: 0, simH: 0, oilOff: 0, curOff: 0, fAb: 0, fBc: 0, th: 0, brOff: 0,
 };
 let frame = 0, last = 0, visible = false;
 const STAGGER = 0.3, STIFF = 64, DRAG = 14.2;
@@ -227,7 +212,6 @@ function step(dt) {
   state.fAb += k0 * 26 * Math.sin(state.th);
   state.fBc += k0 * 26 * Math.sin(state.th - (2 * Math.PI) / 3);
   state.brOff += k0 * 120 * state.breath;
-  state.bubT += k0 * 0.18;
   const want = state.fans ? 16 : 0;
   state.fanRate = calm ? want : state.fanRate + (want - state.fanRate) * (1 - Math.exp(-dt / 0.9));
   state.fanAngle += state.fanRate * dt;
@@ -305,10 +289,6 @@ function draw() {
     setAll(fxBc, "opacity", "");
     setAll(fxBreath, "opacity", "");
   }
-  const bubOn = clamp(state.gasRate * 3, 0, 1);
-  const place = (els, pts, phase) => (liveOn || els[0]?.style.opacity !== "0") && els.forEach((el, i) => { const [x, y] = iso(along(pts, (state.bubT * (1 + i * 0.07) + i / els.length + phase) % 1), P); el.setAttribute("cx", x.toFixed(1)); el.setAttribute("cy", y.toFixed(1)); el.style.opacity = liveOn ? String(bubOn) : "0"; });
-  place(bubIn, GAS_IN, 0);
-  place(bubPipe, GAS_PIPE, 0.3);
   if (levelEl) {
     const zl = LEVEL.z0 + (LEVEL.z1 - LEVEL.z0) * state.level / 100;
     levelEl.setAttribute("d", pathOf([[LEVEL.x, LEVEL.y - LEVEL.w, LEVEL.z0], [LEVEL.x, LEVEL.y + LEVEL.w, LEVEL.z0], [LEVEL.x, LEVEL.y + LEVEL.w, zl], [LEVEL.x, LEVEL.y - LEVEL.w, zl]].map((p) => iso(p, P)), true));

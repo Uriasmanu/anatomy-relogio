@@ -1,10 +1,7 @@
 import { D, HV, LV, hvAxis, RAD, RAD_R_X, CONS } from "../parts.mjs";
-import { GAS } from "./protecao.mjs";
 
 const { CORE_X, CORE_Y, YOKE_HIGH, Z_LID, Z_WALL, Z_FLOOR, OIL_Z, TY0, WALL } = D;
 
-export const GAS_IN = [[CORE_X, CORE_Y[2], 206], [CORE_X + 6, 176, 238], [GAS.x, GAS.y1, Z_WALL - 2]];
-export const GAS_PIPE = [[GAS.x, GAS.y1, Z_LID + 2], [GAS.x, GAS.y1, GAS.z], [GAS.x, GAS.relay + 14, GAS.z]];
 export const LEVEL = { x: CONS.x0 + CONS.len + 2.2, y: CONS.y, z0: CONS.z - 4, z1: CONS.z + 22, w: 3 };
 export const BREATH = { x: CONS.x0 + CONS.len + 20, y: CONS.y, z: CONS.z - 40 };
 
@@ -57,9 +54,6 @@ export function drawFx(c) {
   const down = [-20, 40, 100].map((x) => line(c, [[x, yb, OIL_Z - 10], [x, yb, Z_FLOOR + 10]], "fx-oil fx-cold")).join("");
   put(2, "oleo", [46, 60, 150], down, 51, { cls: "v-cut" });
 
-  const bubbles = (n, id) => Array.from({ length: n }, () => `<circle class="fx-bub" data-bub="${id}" r="1.8" cx="0" cy="0"/>`).join("");
-  put(3, "oleo", [46, 60, 150], bubbles(5, "in"), 450, { cls: "v-cut" });
-  put(7, "tubo", [GAS.x, 0, GAS.z], bubbles(7, "pipe"), 3.2);
 
   const glass = [[LEVEL.x, LEVEL.y - LEVEL.w, LEVEL.z0], [LEVEL.x, LEVEL.y + LEVEL.w, LEVEL.z0], [LEVEL.x, LEVEL.y + LEVEL.w, LEVEL.z1], [LEVEL.x, LEVEL.y - LEVEL.w, LEVEL.z1]];
   const glassSvg = `<path class="fx-glass" d="${c.k.pathOf(glass.map(c.at), true)}"/><path class="fx-level" data-level d=""/>`;

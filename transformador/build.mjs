@@ -12,7 +12,7 @@ import { PARTS, SYSTEMS, BOM_ORDER, STAMP } from "./parts.mjs";
 import { FAN_POS } from "./draw/refrig.mjs";
 import { TAP_STEP } from "./draw/ativa.mjs";
 import { OTI } from "./draw/protecao.mjs";
-import { GAS_IN, GAS_PIPE, LEVEL } from "./draw/fx.mjs";
+import { LEVEL } from "./draw/fx.mjs";
 import { PAGE_CSS } from "./page-css.mjs";
 import { RATED } from "./model.mjs";
 
@@ -61,8 +61,6 @@ const data = {
   fans: FAN_POS,
   oti: OTI,
   tap: { step: TAP_STEP },
-  gasIn: GAS_IN,
-  gasPipe: GAS_PIPE,
   level: LEVEL,
 };
 
