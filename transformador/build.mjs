@@ -8,6 +8,7 @@ import { instanceBounds, packSheet, boundsOf } from "./layout.mjs";
 import { annotations } from "./sheet.mjs";
 import { orthoHtml } from "./ortho.mjs";
 import { liveScript } from "./live.mjs";
+import { folhaSvg, FOLHA_SCALE } from "./folha.mjs";
 import { PARTS, SYSTEMS, BOM_ORDER, STAMP } from "./parts.mjs";
 import { FAN_POS } from "./draw/refrig.mjs";
 import { TAP_STEP } from "./draw/ativa.mjs";
@@ -42,13 +43,15 @@ const fitBox = (box, pad, aspect) => {
 const VB0 = fitBox(u, 20, WIDTH / HEIGHT);
 const VB1 = [0, 0, WIDTH, HEIGHT];
 const VB2 = [0, 0, sheet.width, sheet.height];
+const folha = folhaSvg(P, VB0);
+const VB3 = folha.vb;
 
 const svg = k.figureSvg({
   width: WIDTH,
   height: HEIGHT,
   label:
     "Transformador de potência a óleo em três estágios. Montado: cuba de aço sobre a base, tampa com buchas de alta e baixa tensão, conservador de óleo, radiadores com ventiladores e armário de comando. Desmontado: as peças saem sistema por sistema. Prancha: todas as peças numeradas e espalhadas, com vistas ortogonais.",
-  body: [...[0, 1, 2, 3, 4, 5, 6, 7].map((l) => layerHtml(items, l)), annotations(P, sheet, bounds)],
+  body: [`<g class="scene" style="transform-origin:${folha.origin[0].toFixed(1)}px ${folha.origin[1].toFixed(1)}px;--folha-scale:${FOLHA_SCALE}">`, ...[0, 1, 2, 3, 4, 5, 6, 7].map((l) => layerHtml(items, l)), "</g>", annotations(P, sheet, bounds), folha.svg],
 });
 
 const data = {
@@ -57,7 +60,7 @@ const data = {
   parts: PARTS.map(({ id, sys, n, name, does, nominal, qty, rank, move }) => ({ id, sys, n, name, does, nominal, qty, rank, move })),
   systems: SYSTEMS.map(({ id, n, name }) => ({ id, n, name })),
   offsets: sheet.offsets,
-  vbs: [VB0, VB1, VB2],
+  vbs: [VB0, VB1, VB2, VB3],
   fans: FAN_POS,
   oti: OTI,
   tap: { step: TAP_STEP },

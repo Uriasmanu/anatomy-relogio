@@ -105,7 +105,7 @@ export const PAGE_CSS = `
 }
 @media (max-width:900px){.tf-panel{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media (max-width:460px){.tf-panel{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:760px){[data-stage="2"] .iso-stage{overflow-x:auto;overscroll-behavior-x:contain}[data-stage="2"] .iso-stage .iso-svg{width:980px;max-width:none}}
+@media (max-width:760px){[data-stage="2"] .iso-stage,[data-stage="3"] .iso-stage{overflow-x:auto;overscroll-behavior-x:contain}[data-stage="2"] .iso-stage .iso-svg,[data-stage="3"] .iso-stage .iso-svg{width:980px;max-width:none}}
 @media (max-width:560px){.iso-stage{margin:0 -4px}.tf-sys{margin-left:0}}
 
 
@@ -120,4 +120,24 @@ export const PAGE_CSS = `
 .tf-over[data-on]{visibility:visible}
 .tf-clock{font:11px var(--anatomy-mono);letter-spacing:.05em;color:var(--anatomy-muted)}
 .tf-cell b[data-state="alarm"]{color:var(--anatomy-red)}
+.scene{transition:transform .6s var(--anatomy-ease)}
+[data-stage="3"] .scene{transform:scale(var(--folha-scale))}
+.folha-ann{opacity:0;pointer-events:none;transition:opacity .5s}
+.qd{cursor:default}
+.qd-box{fill:var(--anatomy-paper);stroke:var(--anatomy-mid);stroke-width:1px}
+.qd-h{font:700 17px var(--anatomy-mono);fill:var(--anatomy-strong);letter-spacing:.02em}
+.qd-title{font:700 21px var(--anatomy-mono);fill:var(--anatomy-strong);text-anchor:middle;letter-spacing:.04em}
+.qd-rule{stroke:var(--anatomy-hi);stroke-width:1.2px;fill:none}
+.qd-t{font:15px var(--anatomy-mono);fill:var(--anatomy-text)}
+.qd-th{font-weight:700;fill:var(--anatomy-strong)}
+.qd-f{fill:var(--anatomy-face);stroke:var(--anatomy-hi);stroke-width:1px}
+.qd-f + .qd-t,.qd-f ~ .qd-t{fill:var(--anatomy-text)}
+.qd-grid{stroke:var(--anatomy-lo);stroke-width:.8px;fill:none}
+.qd-lead{fill:none;stroke:var(--anatomy-hi);stroke-width:1px}
+.qd-dot{fill:var(--anatomy-strong)}
+.qd-foot{font:12px var(--anatomy-mono);fill:var(--anatomy-muted);text-anchor:end}
+[data-q10]{fill:var(--anatomy-strong);font-weight:700}
+.qd[data-on] .qd-box{stroke:var(--anatomy-lit);stroke-width:2px}
+.qd[data-on] .qd-lead{stroke:var(--anatomy-lit);stroke-width:1.8px}
+[data-focus] .qd:not([data-on]){opacity:.55}
 `;

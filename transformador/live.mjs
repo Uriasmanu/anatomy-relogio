@@ -57,6 +57,9 @@ const nodes = qa(".it[data-p]").map((el) => {
 });
 const sorted = nodes.filter((n) => n.sort);
 const balloons = qa(".sh-bal, .sh-cota");
+const qds = qa(".qd");
+const folhaEl = svgRoot.querySelector(".folha-ann");
+const q10 = Object.fromEntries(qa("[data-q10]").map((el) => [el.dataset.q10, el]));
 const groundEls = qa(".it.ground");
 const titles = qa(".sh-title");
 const annot = svgRoot.querySelector(".sheet-ann");
@@ -94,7 +97,7 @@ function setStage(n) {
   if (state.stage === n) return;
   const opening = n > state.stage;
   state.stage = n;
-  const wantApart = n >= 1;
+  const wantApart = n === 1 || n === 2;
   const list = [...PARTS].sort((a, b) => (wantApart ? a.rank - b.rank : b.rank - a.rank));
   list.forEach((p, i) => {
     const s = spring[p.id];
@@ -109,21 +112,23 @@ function setStage(n) {
   state.spDir = n === 2 ? 1 : -1;
   state.spT0 = state.clock + (n === 2 ? (wantApart && opening && !PARTS.every((p) => spring[p.id].x === 1) ? (FLY + 1) * STAGGER + 0.6 : 0.05) : 0);
   if (n === 2 && state.cut) setCut(false);
+  paintSelection();
   run();
 }
 function setCut(on) {
-  if (on && state.stage === 2) return;
+  if (on && state.stage >= 2) return;
   state.cut = on;
-  svgRoot.toggleAttribute("data-cut", on);
   cutBtn.setAttribute("aria-pressed", on ? "true" : "false");
   run();
 }
-const effective = () => state.hov || state.sel;
+const effective = () => (Array.isArray(state.hov) ? null : state.hov || state.sel);
 function paintSelection() {
+  const many = Array.isArray(state.hov) ? state.hov : null;
   const id = effective();
-  const sys = !id && state.sysFocus ? state.sysFocus : null;
-  const on = (pid) => (id ? pid === id : sys ? byId[pid].sys === sys : false);
-  svgRoot.toggleAttribute("data-focus", Boolean(id || sys));
+  const sys = !id && !many && state.sysFocus ? state.sysFocus : null;
+  const on = (pid) => (many ? many.includes(pid) : id ? pid === id : sys ? byId[pid].sys === sys : false);
+  qds.forEach((q) => q.toggleAttribute("data-on", many ? q === state.hovQ : id ? q.dataset.parts.split(" ").includes(id) : false));
+  svgRoot.toggleAttribute("data-focus", Boolean(id || sys || many));
   nodes.forEach((n) => n.el.toggleAttribute("data-on", on(n.id)));
   balloons.forEach((b) => b.toggleAttribute("data-on", on(b.dataset.p)));
   ovs.forEach((o) => o.toggleAttribute("data-on", on(o.dataset.p)));
@@ -131,15 +136,16 @@ function paintSelection() {
   document.querySelector(".tf-board").toggleAttribute("data-focus", Boolean(id || sys));
   const p = id ? byId[id] : null;
   const s = sys ? SYSTEMS.find((x) => x.id === sys) : null;
-  info.textContent = p ? p.n + " · " + p.name + " — " + p.does + " " + p.nominal + (p.qty > 1 ? " (" + p.qty + " no total)." : ".")
+  info.textContent = many ? state.hovQ.dataset.q + ") " + state.hovQ.dataset.title.toLowerCase() : p ? p.n + " · " + p.name + " — " + p.does + " " + p.nominal + (p.qty > 1 ? " (" + p.qty + " no total)." : ".")
     : s ? s.n + " · " + s.name + ": " + PARTS.filter((x) => x.sys === s.id).map((x) => x.name).join(", ") + "."
-    : "Passe o mouse sobre uma peça ou um balão. O botão avança: montado, desmontado, prancha.";
+    : "Passe o mouse sobre uma peça, um balão ou um quadro. O botão avança: montado, desmontado, prancha, folha.";
   stage.setAttribute("aria-valuetext", p ? p.name : s ? s.name : "nenhuma peça selecionada");
   if (id === "oleo" && state.stage < 2 && !state.cut) setCut(true);
   run();
 }
 function select(id) { state.sel = state.sel === id ? null : id; if (id) state.sysFocus = null; paintSelection(); }
-function hover(id) { if (state.hov === id) return; state.hov = id; paintSelection(); }
+function hover(id) { if (state.hov === id) return; state.hov = id; state.hovQ = null; paintSelection(); }
+function hoverQuadro(q) { if (state.hovQ === q) return; state.hovQ = q; state.hov = q.dataset.parts.split(" ").filter(Boolean); paintSelection(); }
 function focusSystem(id) { state.sysFocus = id; state.sel = null; paintSelection(); }
 function toggleSystem(id) {
   state.off.has(id) ? state.off.delete(id) : state.off.add(id);
@@ -233,6 +239,11 @@ function draw() {
   groundEls.forEach((g) => (g.style.opacity = String(1 - smooth(sp * 1.6))));
   root.dataset.stage = String(state.stage);
   if (state.stage === 2 && state.cut) setCut(false);
+  svgRoot.toggleAttribute("data-cut", state.cut || state.stage === 3);
+  const closed = PARTS.every((p) => spring[p.id].x === 0 && !spring[p.id].armed && spread[p.id] === 0);
+  const folhaOn = state.stage === 3 && closed;
+  folhaEl.style.opacity = folhaOn ? "1" : "0";
+  folhaEl.style.pointerEvents = folhaOn ? "" : "none";
   const vb = state.vb;
   svgRoot.setAttribute("viewBox", vb.map((v) => v.toFixed(2)).join(" "));
   const tk = (vb[2] / svgW).toFixed(2);
@@ -244,7 +255,7 @@ function draw() {
     const a = ((-135 + (270 * clamp(state.oil, 0, 150)) / 150) * Math.PI) / 180;
     needleEl.setAttribute("d", segment([OTI.x, OTI.y, OTI.z], [OTI.x + OTI.r * Math.sin(a), OTI.y, OTI.z + OTI.r * Math.cos(a)], P));
   }
-  fanEls.forEach((el) => { const i = Number(el.dataset.fan); const f = FANS[i]; const d = bladePath(f[0], f[1], f[2], state.fanAngle + i * 0.7); el.querySelectorAll("path").forEach((p) => p.setAttribute("d", d)); });
+  if (state.stage !== 3) fanEls.forEach((el) => { const i = Number(el.dataset.fan); const f = FANS[i]; const d = bladePath(f[0], f[1], f[2], state.fanAngle + i * 0.7); el.querySelectorAll("path").forEach((p) => p.setAttribute("d", d)); });
   const eff = state.on ? state.load : 0;
   const vs = state.on ? lineVoltageLV(state.tap) : 0, is = currentLV(state.tap, eff), ip = currentHV(eff);
   const liveOn = state.stage === 0 && PARTS.every((p) => spring[p.id].x === 0 && !spring[p.id].armed) && !sheet;
@@ -280,6 +291,7 @@ function draw() {
     : moving ? (state.stage ? "desmontando" : "montando")
     : state.stage === 0 ? (state.on ? "Vs " + num(vs / 1000, 2) + " kV · óleo " + num(state.oil, 0) + " °C · PQ " + num(state.hot, 0) + " °C" : "desligado · PQ " + num(state.hot, 0) + " °C")
     : state.stage === 1 ? "desmontado · " + SYSTEMS.length + " sistemas"
+    : state.stage === 3 ? (closed ? "folha · " + qds.length + " quadros" : "montando a folha")
     : settled ? "prancha · " + PARTS.length + " peças" : "montando a prancha";
   if (label !== state.say) {
     state.say = label; readout.textContent = label;
@@ -298,8 +310,15 @@ function draw() {
   }
   const tv = document.querySelector("[data-tapval]");
   if (tv) tv.textContent = (tapFraction(state.tap) >= 0 ? "+" : "−") + num(Math.abs(tapFraction(state.tap)) * 100, 2) + " %";
-  toggle.textContent = ["Desmontar", "Desmontar mais", "Montar"][state.stage];
-  cutBtn.disabled = state.stage === 2;
+  toggle.textContent = ["Desmontar", "Desmontar mais", "Folha", "Montar"][state.stage];
+  cutBtn.disabled = state.stage >= 2;
+  if (state.stage === 3) {
+    const set = (key, v) => { if (q10[key] && q10[key].textContent !== v) q10[key].textContent = v; };
+    set("load", num(state.load * 100, 0)); set("mva", num(state.load * 25, 1));
+    set("tap", (tapFraction(state.tap) >= 0 ? "+" : "−") + num(Math.abs(tapFraction(state.tap)) * 100, 2) + " %"); set("np", String(turnsHV(state.tap)));
+    set("vs", num(vs / 1000, 2)); set("ip", num(ip, 0)); set("is", num(is, 0));
+    set("loss", num(state.on ? totalLoss(state.load) / 1000 : 0, 0)); set("eff", state.on ? num(efficiency(state.load) * 100, 2) : "–");
+  }
 }
 function tick(now) {
   const dt = last ? Math.min((now - last) / 1000, 1 / 20) : 1 / 60;
@@ -311,7 +330,7 @@ function tick(now) {
 function run() { if (!frame && visible) { last = 0; frame = requestAnimationFrame(tick); } }
 const take = () => { state.touring = false; state.idle = 0; };
 new IntersectionObserver((entries) => { visible = entries[entries.length - 1].isIntersecting; if (visible) run(); }, { rootMargin: "120px 0px" }).observe(stage);
-toggle.addEventListener("click", () => { take(); setStage((state.stage + 1) % 3); });
+toggle.addEventListener("click", () => { take(); setStage((state.stage + 1) % 4); });
 cutBtn.addEventListener("click", () => { take(); setCut(!state.cut); });
 sysBtns.forEach((b) => b.addEventListener("click", () => { take(); toggleSystem(b.dataset.sysToggle); }));
 rows.forEach((r) => {
@@ -320,9 +339,10 @@ rows.forEach((r) => {
   r.addEventListener("pointerleave", () => hover(null));
   r.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); take(); select(r.dataset.pick); } });
 });
+const quadroOf = (target) => (target.closest ? target.closest(".qd") : null);
 const hitOf = (target) => { const g = target.closest ? target.closest(".it[data-p], .sh-bal, .sh-cota, .ov[data-p]") : null; return g && g.dataset.p ? g.dataset.p : null; };
 document.querySelectorAll(".iso-stage, .tf-ortho").forEach((area) => {
-  area.addEventListener("pointermove", (e) => { if (e.pointerType !== "touch") hover(hitOf(e.target)); });
+  area.addEventListener("pointermove", (e) => { if (e.pointerType === "touch") return; const q = quadroOf(e.target); if (q) hoverQuadro(q); else hover(hitOf(e.target)); });
   area.addEventListener("pointerleave", () => hover(null));
   area.addEventListener("click", (e) => { take(); const id = hitOf(e.target); if (id) select(id); else if (state.sel) select(state.sel); });
 });
@@ -333,7 +353,7 @@ rearmBtn.addEventListener("click", () => { if (rearmBtn.disabled) return; take()
 stage.addEventListener("keydown", (e) => {
   const ids = SYSTEMS.map((s) => s.id);
   const at = state.sysFocus ? ids.indexOf(state.sysFocus) : -1;
-  if (e.key === " " || e.key === "Enter") { e.preventDefault(); take(); setStage((state.stage + 1) % 3); }
+  if (e.key === " " || e.key === "Enter") { e.preventDefault(); take(); setStage((state.stage + 1) % 4); }
   else if (e.key === "ArrowRight") { e.preventDefault(); take(); focusSystem(ids[(at + 1) % ids.length]); }
   else if (e.key === "ArrowLeft") { e.preventDefault(); take(); focusSystem(ids[(at - 1 + ids.length) % ids.length]); }
   else if (e.key === "ArrowUp") { e.preventDefault(); take(); state.load = clamp(state.load + 0.05, 0.05, 1.5); loadInput.value = Math.round(state.load * 100); run(); }
